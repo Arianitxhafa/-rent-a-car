@@ -29,4 +29,32 @@ module.exports = (server, service) => {
     res.json(result);
   });
 
+  server.put('/api/cars/update/:id', function(req, res) {
+    var body = req.body;
+    var result = service.updateCar(
+      req.params.id,
+      body.brand,
+      body.model,
+      body.year,
+      body.pricePerDay,
+      body.available
+    );
+    res.json(result);
+  });
+
+  server.delete('/api/cars/:id', function(req, res) {
+    var result = service.deleteCar(req.params.id);
+    res.json(result);
+  });
+
+  server.get('/api/cars/list/:filter', function(req, res) {
+    var cars = service.listCars(req.params.filter);
+    res.json(cars);
+  });
+
+  server.get('/api/cars/find/:id', function(req, res) {
+    var result = service.findCar(req.params.id);
+    res.json(result);
+  });
+
 };

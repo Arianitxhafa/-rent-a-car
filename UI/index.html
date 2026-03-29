@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="sq">
 <head>
     <meta charset="UTF-8">
@@ -13,8 +13,17 @@
     </header>
 
     <main>
+        <section id="filter-section">
+            <h2>Filtro Makinat</h2>
+            <div class="filter-buttons">
+                <button onclick="filterCars('')">Te Gjitha</button>
+                <button onclick="filterCars('available')">Te Disponueshme</button>
+                <button onclick="filterCars('rented')">Te Zena</button>
+            </div>
+        </section>
+
         <section id="cars-section">
-            <h2>Makinat e Disponueshme</h2>
+            <h2>Makinat</h2>
             <div id="cars-container"></div>
         </section>
 
@@ -27,6 +36,19 @@
                 <input type="number" id="year" placeholder="Viti" />
                 <input type="number" id="price" placeholder="Çmimi/Ditë" />
                 <button onclick="addCar()">Shto Makinën</button>
+            </div>
+        </section>
+
+        <section id="update-section" style="display:none;">
+            <h2>Edito Makinën</h2>
+            <div class="form-container">
+                <input type="text" id="update-id" placeholder="ID" readonly />
+                <input type="text" id="update-brand" placeholder="Marka" />
+                <input type="text" id="update-model" placeholder="Modeli" />
+                <input type="number" id="update-year" placeholder="Viti" />
+                <input type="number" id="update-price" placeholder="Çmimi/Ditë" />
+                <button onclick="updateCar()">Ruaj Ndryshimet</button>
+                <button onclick="document.getElementById('update-section').style.display='none'">Anulo</button>
             </div>
         </section>
     </main>
