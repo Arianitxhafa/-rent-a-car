@@ -23,7 +23,7 @@
 - node_modules është i ngarkuar në GitHub (duhet hequr)
 
 ### A kompajlohet dhe ekzekutohet programi?
-Po - programi ekzekutohet me `node Program.js` dhe shërben në http://localhost:3000
+Po - programi ekzekutohet dhe kompajlohet
 
 ---
 
