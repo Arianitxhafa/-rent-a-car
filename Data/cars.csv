@@ -1,4 +1,4 @@
- id,brand,model,year,pricePerDay,available
+id,brand,model,year,pricePerDay,available
 1,Toyota,Corolla,2020,35,true
 2,BMW,320i,2021,75,true
 3,Mercedes,C200,2022,90,true

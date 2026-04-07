@@ -5,54 +5,226 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rent a Car</title>
     <link rel="stylesheet" href="style.css">
+    <meta name="color-scheme" content="light dark">
 </head>
 <body>
-    <header>
-        <h1>🚗 Rent a Car</h1>
-        <p>Zgjidh makinën tuaj të preferuar</p>
+    <div id="toast-root" class="toast-root" aria-live="polite" aria-atomic="true"></div>
+ 
+    <header class="topbar">
+        <div class="container topbar__inner">
+            <div class="brand">
+                <div class="brand__logo" aria-hidden="true">🚗</div>
+                <div class="brand__text">
+                    <div class="brand__name">Rent a Car</div>
+                    <div class="brand__tagline">Zgjidh makinën tënde, shpejt dhe bukur.</div>
+                </div>
+            </div>
+            <div class="topbar__actions">
+                <button id="theme-toggle" class="icon-btn" type="button" aria-label="Ndrysho temën" title="Ndrysho temën">
+                    <span class="icon-btn__icon" aria-hidden="true">◐</span>
+                </button>
+                <button id="open-search" class="btn btn--ghost" type="button" onclick="toggleSearchPanel()">
+                    ⌕ Kërkim &amp; Sortim
+                </button>
+                <button id="open-export" class="btn btn--ghost" type="button" onclick="doExport()">
+                    ↓ Eksporto
+                </button>
+                <button id="open-add" class="btn btn--primary" type="button">
+                    Shto makinë
+                </button>
+            </div>
+        </div>
     </header>
-
-    <main>
-        <section id="filter-section">
-            <h2>Filtro Makinat</h2>
-            <div class="filter-buttons">
-                <button onclick="filterCars('')">Te Gjitha</button>
-                <button onclick="filterCars('available')">Te Disponueshme</button>
-                <button onclick="filterCars('rented')">Te Zena</button>
+ 
+    <main class="page">
+        <section class="hero">
+            <div class="container hero__inner">
+                <div class="hero__content">
+                    <h1 class="hero__title">Menaxho flotën. Rezervo më shpejt. Dukje moderne.</h1>
+                    <p class="hero__subtitle">
+                        Kontrollo disponueshmërinë në kohë reale, rezervo/kthe me një klikim dhe menaxho makinat me UI të pastër.
+                    </p>
+                    <div class="hero__controls">
+                        <div class="search">
+                            <span class="search__icon" aria-hidden="true">⌕</span>
+                            <input id="search-input" class="search__input" type="search" placeholder="Kërko sipas markës, modelit ose ID-së…" autocomplete="off" />
+                        </div>
+                        <div class="chips" role="tablist" aria-label="Filtro makinat">
+                            <button class="chip is-active" type="button" data-filter="" role="tab" aria-selected="true">Të gjitha</button>
+                            <button class="chip" type="button" data-filter="available" role="tab" aria-selected="false">Të disponueshme</button>
+                            <button class="chip" type="button" data-filter="rented" role="tab" aria-selected="false">Të zëna</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="hero__stats" aria-label="Statistikat e flotës">
+                    <div class="stat">
+                        <div class="stat__label">Gjithsej</div>
+                        <div class="stat__value" id="stat-total">—</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat__label">Disponueshme</div>
+                        <div class="stat__value" id="stat-available">—</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat__label">Të zëna</div>
+                        <div class="stat__value" id="stat-rented">—</div>
+                    </div>
+                </div>
             </div>
         </section>
-
-        <section id="cars-section">
-            <h2>Makinat</h2>
-            <div id="cars-container"></div>
-        </section>
-
-        <section id="add-section">
-            <h2>Shto Makinë të Re</h2>
-            <div class="form-container">
-                <input type="text" id="id" placeholder="ID" />
-                <input type="text" id="brand" placeholder="Marka" />
-                <input type="text" id="model" placeholder="Modeli" />
-                <input type="number" id="year" placeholder="Viti" />
-                <input type="number" id="price" placeholder="Çmimi/Ditë" />
-                <button onclick="addCar()">Shto Makinën</button>
+ 
+        <!-- SEARCH & SORT PANEL -->
+        <section id="search-panel" class="section" style="display:none;">
+            <div class="container">
+                <div class="search-panel-inner">
+                    <h2 class="section__title" style="margin-bottom:16px;">⌕ Kërkim, Sortim &amp; Statistika</h2>
+                    <div class="search-panel-grid">
+                        <div class="field">
+                            <label class="field__label">Kërko Markë / Model</label>
+                            <input class="field__input" type="text" id="search-query" placeholder="p.sh. BMW, Corolla..." />
+                        </div>
+                        <div class="field">
+                            <label class="field__label">Çmimi Maksimal ($)</label>
+                            <input class="field__input" type="number" id="search-price" placeholder="p.sh. 60" min="0" />
+                        </div>
+                        <div class="field">
+                            <label class="field__label">Sortim</label>
+                            <select id="sort-select" class="field__input">
+                                <option value="">-- Zgjidh Sortim --</option>
+                                <option value="price-asc">Çmimi: Nga më i lirë</option>
+                                <option value="price-desc">Çmimi: Nga më i shtrenjtë</option>
+                                <option value="year-desc">Viti: Nga më i ri</option>
+                                <option value="year-asc">Viti: Nga më i vjetër</option>
+                                <option value="brand-az">Marka: A-Z</option>
+                                <option value="brand-za">Marka: Z-A</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="search-panel-actions">
+                        <button class="btn btn--primary" onclick="doSearch()">⌕ Kërko</button>
+                        <button class="btn btn--ghost" onclick="doSort()">↕ Sorto</button>
+                        <button class="btn btn--ghost" onclick="loadStatistics()">◎ Statistika</button>
+                        <button class="btn btn--ghost" onclick="clearSearch()">✕ Pastro</button>
+                    </div>
+                    <div id="search-message" class="search-msg"></div>
+                    <div id="statistics-panel" style="display:none;" class="statistics-panel">
+                        <h3 class="stats-panel-title">Statistikat e Fleet-it</h3>
+                        <div class="stats-panel-grid">
+                            <div class="stats-panel-card">
+                                <div class="stats-panel-label">Total Makina</div>
+                                <div class="stats-panel-value" id="sp-total">—</div>
+                            </div>
+                            <div class="stats-panel-card">
+                                <div class="stats-panel-label">Disponueshme</div>
+                                <div class="stats-panel-value sp-green" id="sp-available">—</div>
+                            </div>
+                            <div class="stats-panel-card">
+                                <div class="stats-panel-label">Të Zëna</div>
+                                <div class="stats-panel-value sp-red" id="sp-rented">—</div>
+                            </div>
+                            <div class="stats-panel-card">
+                                <div class="stats-panel-label">Çmimi Mesatar/Ditë</div>
+                                <div class="stats-panel-value sp-blue" id="sp-avg">—</div>
+                            </div>
+                            <div class="stats-panel-card">
+                                <div class="stats-panel-label">Çmimi Maksimal</div>
+                                <div class="stats-panel-value" id="sp-max">—</div>
+                            </div>
+                            <div class="stats-panel-card">
+                                <div class="stats-panel-label">Çmimi Minimal</div>
+                                <div class="stats-panel-value" id="sp-min">—</div>
+                            </div>
+                            <div class="stats-panel-card">
+                                <div class="stats-panel-label">Të Ardhura Ditore</div>
+                                <div class="stats-panel-value sp-blue" id="sp-revenue">—</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </section>
-
-        <section id="update-section" style="display:none;">
-            <h2>Edito Makinën</h2>
-            <div class="form-container">
-                <input type="text" id="update-id" placeholder="ID" readonly />
-                <input type="text" id="update-brand" placeholder="Marka" />
-                <input type="text" id="update-model" placeholder="Modeli" />
-                <input type="number" id="update-year" placeholder="Viti" />
-                <input type="number" id="update-price" placeholder="Çmimi/Ditë" />
-                <button onclick="updateCar()">Ruaj Ndryshimet</button>
-                <button onclick="document.getElementById('update-section').style.display='none'">Anulo</button>
+ 
+        <section class="section">
+            <div class="container section__header">
+                <div>
+                    <h2 class="section__title">Flota</h2>
+                    <p class="section__hint">Kliko "Edito" për ndryshime, ose "Fshi" për ta hequr nga lista.</p>
+                </div>
+                <div class="section__right">
+                    <div id="status-pill" class="pill" aria-live="polite">Gati</div>
+                </div>
+            </div>
+            <div class="container">
+                <div id="cars-container" class="grid" aria-live="polite"></div>
+                <div id="empty-state" class="empty" hidden>
+                    <div class="empty__title">S'ka rezultate</div>
+                    <div class="empty__text">Provo një filtër tjetër ose ndrysho kërkimin.</div>
+                </div>
             </div>
         </section>
     </main>
-
+ 
+    <!-- ADD/EDIT MODAL -->
+    <div id="modal-root" class="modal-root" hidden>
+        <div class="modal-backdrop" data-close="true"></div>
+        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal__header">
+                <h3 id="modal-title" class="modal__title">Shto makinë</h3>
+                <button class="icon-btn" type="button" data-close="true" aria-label="Mbyll" title="Mbyll">
+                    <span class="icon-btn__icon" aria-hidden="true">✕</span>
+                </button>
+            </div>
+            <div class="modal__body">
+                <form id="car-form" class="form">
+                    <div class="field">
+                        <label class="field__label" for="id">ID</label>
+                        <input class="field__input" type="text" id="id" placeholder="p.sh. 001" />
+                    </div>
+                    <div class="field">
+                        <label class="field__label" for="brand">Marka</label>
+                        <input class="field__input" type="text" id="brand" placeholder="p.sh. BMW" />
+                    </div>
+                    <div class="field">
+                        <label class="field__label" for="model">Modeli</label>
+                        <input class="field__input" type="text" id="model" placeholder="p.sh. X5" />
+                    </div>
+                    <div class="field">
+                        <label class="field__label" for="year">Viti</label>
+                        <input class="field__input" type="number" id="year" placeholder="p.sh. 2023" min="1900" max="2100" />
+                    </div>
+                    <div class="field">
+                        <label class="field__label" for="price">Çmimi/Ditë</label>
+                        <input class="field__input" type="number" id="price" placeholder="p.sh. 35" min="0" step="1" />
+                    </div>
+                </form>
+            </div>
+            <div class="modal__footer">
+                <button id="modal-cancel" class="btn btn--ghost" type="button" data-close="true">Anulo</button>
+                <button id="modal-submit" class="btn btn--primary" type="button">Ruaj</button>
+            </div>
+        </div>
+    </div>
+ 
+    <!-- EXPORT MODAL -->
+    <div id="export-modal" class="modal-root" hidden>
+        <div class="modal-backdrop" onclick="document.getElementById('export-modal').hidden=true"></div>
+        <div class="modal" role="dialog" style="max-width:680px;">
+            <div class="modal__header">
+                <h3 class="modal__title">Raporti i Fleet-it</h3>
+                <button class="icon-btn" type="button" onclick="document.getElementById('export-modal').hidden=true">
+                    <span class="icon-btn__icon">✕</span>
+                </button>
+            </div>
+            <div class="modal__body">
+                <pre id="export-content" class="export-pre"></pre>
+            </div>
+            <div class="modal__footer">
+                <button class="btn btn--ghost" onclick="document.getElementById('export-modal').hidden=true">Mbyll</button>
+            </div>
+        </div>
+    </div>
+ 
     <script src="app.js"></script>
 </body>
 </html>
+ 

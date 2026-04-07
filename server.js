@@ -57,4 +57,52 @@ module.exports = (server, service) => {
     res.json(result);
   });
 
+  server.get('/api/cars/search', function(req, res) {
+    try {
+      var query = req.query.q || '';
+      var maxPrice = req.query.maxPrice || null;
+      if (maxPrice && isNaN(parseFloat(maxPrice))) {
+        return res.status(400).json({ success: false, message: 'Ju lutem shkruani çmim valid!' });
+      }
+      var result = service.searchCars(query, maxPrice);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Gabim i serverit: ' + err.message });
+    }
+  });
+
+  server.get('/api/cars/sort/:sortBy', function(req, res) {
+    try {
+      var validSorts = ['price-asc', 'price-desc', 'year-asc', 'year-desc', 'brand-az', 'brand-za'];
+      if (validSorts.indexOf(req.params.sortBy) === -1) {
+        return res.status(400).json({ success: false, message: 'Sortim i pavlefshëm!' });
+      }
+      var result = service.sortCars(req.params.sortBy);
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Gabim i serverit: ' + err.message });
+    }
+  });
+
+  server.get('/api/cars/statistics', function(req, res) {
+    try {
+      var result = service.getStatistics();
+      res.json(result);
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Gabim: ' + err.message });
+    }
+  });
+
+  server.get('/api/cars/export', function(req, res) {
+    try {
+      var result = service.exportReport();
+      if (!result.success) return res.status(500).json(result);
+      var exportPath = require('path').join(__dirname, 'docs', 'raport.txt');
+      var saved = service.repository.exportToFile(result.content, exportPath);
+      res.json({ success: true, message: saved ? 'Raporti u eksportua!' : 'Raporti u gjenerua!', content: result.content });
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Gabim: ' + err.message });
+    }
+  });
+
 };

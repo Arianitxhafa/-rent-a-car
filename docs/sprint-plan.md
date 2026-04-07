@@ -1,4 +1,4 @@
-# Sprint Plan - Rent a Car
+# Sprint Plan - Rent a CarS
 
 ## Gjendja Aktuale
 
