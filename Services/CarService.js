@@ -7,100 +7,229 @@ class CarService {
     this.repository = new FileRepository(path.join(__dirname, '../Data/cars.csv'));
   }
 
+  // ===== VALIDIM I CENTRALIZUAR =====
+  // Para: validimi ishte i shperndare - pak ne UI, pak ne metoda te ndara
+  // Tani: nje funksion i vetem kontrollon te gjitha fushat para cdo operacioni
+  validateCarInput(brand, model, year, pricePerDay) {
+    if (!brand || String(brand).trim() === '') {
+      return { valid: false, message: 'Marka nuk mund te jete bosh!' };
+    }
+    if (!model || String(model).trim() === '') {
+      return { valid: false, message: 'Modeli nuk mund te jete bosh!' };
+    }
+    var yearNum = parseInt(year);
+    if (isNaN(yearNum) || yearNum < 1900 || yearNum > 2100) {
+      return { valid: false, message: 'Viti duhet te jete numer valid ndermjet 1900 dhe 2100!' };
+    }
+    var priceNum = parseFloat(pricePerDay);
+    if (isNaN(priceNum) || priceNum <= 0) {
+      return { valid: false, message: 'Cmimi duhet te jete numer pozitiv me shume se 0!' };
+    }
+    return { valid: true };
+  }
+
+  // ===== AUTO-INCREMENT ID =====
+  // Para: useri fusit manualisht ID-ne - shkaktonte konflikte dhe gabime
+  // Tani: sistemi gjeneron automatikisht ID unike
+  generateId() {
+    try {
+      var cars = this.repository.getAll();
+      if (cars.length === 0) return '1';
+      var maxId = Math.max.apply(null, cars.map(function(c) {
+        return parseInt(c.getId()) || 0;
+      }));
+      return String(maxId + 1);
+    } catch (err) {
+      return String(Date.now());
+    }
+  }
+
   getAllCars() {
-    return this.repository.getAll();
+    try {
+      return this.repository.getAll();
+    } catch (err) {
+      return [];
+    }
   }
 
   getCarById(id) {
-    return this.repository.getById(id);
+    try {
+      if (!id || String(id).trim() === '') {
+        return null;
+      }
+      return this.repository.getById(String(id).trim());
+    } catch (err) {
+      return null;
+    }
   }
 
-  addCar(id, brand, model, year, pricePerDay, available) {
-    const car = new Car(id, brand, model, year, pricePerDay, available);
-    this.repository.add(car);
-    return car;
+  // Para: addCar nuk validonte inputin - pranonte vlera bosh ose negative
+  // Tani: perdor validateCarInput() para se te shtoje
+  addCar(brand, model, year, pricePerDay, available) {
+    try {
+      var validation = this.validateCarInput(brand, model, year, pricePerDay);
+      if (!validation.valid) {
+        return { success: false, message: validation.message };
+      }
+      var id = this.generateId();
+      var car = new Car(id, String(brand).trim(), String(model).trim(), parseInt(year), parseFloat(pricePerDay), available !== false);
+      this.repository.add(car);
+      return { success: true, car: car, message: brand + ' ' + model + ' u shtua me sukses!' };
+    } catch (err) {
+      return { success: false, message: 'Gabim gjate shtimit: ' + err.message };
+    }
   }
 
   getAvailableCars() {
-    return this.repository.getAll().filter(c => c.isAvailable());
+    try {
+      return this.repository.getAll().filter(function(c) { return c.isAvailable(); });
+    } catch (err) {
+      return [];
+    }
   }
 
   rentCar(id) {
-    const car = this.repository.getById(id);
-    if (!car) return { success: false, message: 'Makina nuk u gjet!' };
-    if (!car.isAvailable()) return { success: false, message: 'Makina nuk eshte e disponueshme!' };
-    car._available = false;
-    this.repository.save();
-    return { success: true, message: car.getDetails() + ' u rezervua me sukses!' };
+    try {
+      if (!id || String(id).trim() === '') {
+        return { success: false, message: 'ID nuk mund te jete bosh!' };
+      }
+      var car = this.repository.getById(String(id).trim());
+      if (!car) return { success: false, message: 'Makina me ID ' + id + ' nuk u gjet!' };
+      if (!car.isAvailable()) return { success: false, message: 'Makina nuk eshte e disponueshme!' };
+      car._available = false;
+      this.repository.save();
+      return { success: true, message: car.getDetails() + ' u rezervua me sukses!' };
+    } catch (err) {
+      return { success: false, message: 'Gabim gjate rezervimit: ' + err.message };
+    }
   }
 
   returnCar(id) {
-    const car = this.repository.getById(id);
-    if (!car) return { success: false, message: 'Makina nuk u gjet!' };
-    car._available = true;
-    this.repository.save();
-    return { success: true, message: car.getDetails() + ' u kthye me sukses!' };
+    try {
+      if (!id || String(id).trim() === '') {
+        return { success: false, message: 'ID nuk mund te jete bosh!' };
+      }
+      var car = this.repository.getById(String(id).trim());
+      if (!car) return { success: false, message: 'Makina me ID ' + id + ' nuk u gjet!' };
+      if (car.isAvailable()) return { success: false, message: 'Makina eshte tashmë e disponueshme!' };
+      car._available = true;
+      this.repository.save();
+      return { success: true, message: car.getDetails() + ' u kthye me sukses!' };
+    } catch (err) {
+      return { success: false, message: 'Gabim gjate kthimit: ' + err.message };
+    }
   }
 
+  // Para: updateCar kishte validim te pjesshem - vetem brand dhe price
+  // Tani: perdor validateCarInput() per validim te plote te te gjitha fushave
   updateCar(id, brand, model, year, pricePerDay, available) {
-    if (!brand || brand.trim() === '') {
-      return { success: false, message: 'Emri i markes nuk mund te jete bosh!' };
+    try {
+      if (!id || String(id).trim() === '') {
+        return { success: false, message: 'ID nuk mund te jete bosh!' };
+      }
+      var validation = this.validateCarInput(brand, model, year, pricePerDay);
+      if (!validation.valid) {
+        return { success: false, message: validation.message };
+      }
+      var existing = this.repository.getById(String(id).trim());
+      if (!existing) {
+        return { success: false, message: 'Makina me ID ' + id + ' nuk u gjet!' };
+      }
+      var updatedCar = new Car(
+        String(id).trim(),
+        String(brand).trim(),
+        String(model).trim(),
+        parseInt(year),
+        parseFloat(pricePerDay),
+        available !== false
+      );
+      var result = this.repository.update(String(id).trim(), updatedCar);
+      if (!result) return { success: false, message: 'Makina nuk u perditesua!' };
+      return { success: true, message: brand + ' ' + model + ' u perditesua me sukses!' };
+    } catch (err) {
+      return { success: false, message: 'Gabim gjate perditesimit: ' + err.message };
     }
-    if (pricePerDay <= 0) {
-      return { success: false, message: 'Cmimi duhet te jete me shume se 0!' };
-    }
-    var updatedCar = new Car(id, brand, model, year, pricePerDay, available);
-    var result = this.repository.update(id, updatedCar);
-    if (!result) return { success: false, message: 'Makina nuk u gjet!' };
-    return { success: true, message: 'Makina u perditesua me sukses!' };
   }
 
   deleteCar(id) {
-    var result = this.repository.delete(id);
-    if (!result) return { success: false, message: 'Makina nuk u gjet!' };
-    return { success: true, message: 'Makina u fshi me sukses!' };
+    try {
+      if (!id || String(id).trim() === '') {
+        return { success: false, message: 'ID nuk mund te jete bosh!' };
+      }
+      var existing = this.repository.getById(String(id).trim());
+      if (!existing) {
+        return { success: false, message: 'Makina me ID ' + id + ' nuk u gjet!' };
+      }
+      var result = this.repository.delete(String(id).trim());
+      if (!result) return { success: false, message: 'Makina nuk u fshi!' };
+      return { success: true, message: 'Makina u fshi me sukses!' };
+    } catch (err) {
+      return { success: false, message: 'Gabim gjate fshirjes: ' + err.message };
+    }
   }
 
   listCars(filter) {
-    var cars = this.repository.getAll();
-    if (filter === 'available') {
-      return cars.filter(function(c) { return c.isAvailable(); });
+    try {
+      var cars = this.repository.getAll();
+      if (filter === 'available') {
+        return cars.filter(function(c) { return c.isAvailable(); });
+      }
+      if (filter === 'rented') {
+        return cars.filter(function(c) { return !c.isAvailable(); });
+      }
+      return cars;
+    } catch (err) {
+      return [];
     }
-    if (filter === 'rented') {
-      return cars.filter(function(c) { return !c.isAvailable(); });
-    }
-    return cars;
   }
 
   findCar(id) {
-    var car = this.repository.getById(id);
-    if (!car) return { success: false, message: 'Makina nuk u gjet!' };
-    return { success: true, car: car };
+    try {
+      if (!id || String(id).trim() === '') {
+        return { success: false, message: 'ID nuk mund te jete bosh!' };
+      }
+      var car = this.repository.getById(String(id).trim());
+      if (!car) return { success: false, message: 'Makina me ID ' + id + ' nuk u gjet!' };
+      return { success: true, car: car };
+    } catch (err) {
+      return { success: false, message: 'Gabim: ' + err.message };
+    }
   }
+
   searchCars(query, maxPrice) {
     try {
       var cars = this.repository.getAll();
       var results = cars;
-      if (query && query.trim() !== '') {
-        var q = query.toLowerCase().trim();
+      if (query && String(query).trim() !== '') {
+        var q = String(query).toLowerCase().trim();
         results = results.filter(function(c) {
           return c.getBrand().toLowerCase().indexOf(q) !== -1 ||
                  c.getModel().toLowerCase().indexOf(q) !== -1;
         });
       }
-      if (maxPrice && !isNaN(maxPrice) && maxPrice > 0) {
-        results = results.filter(function(c) {
-          return parseFloat(c.getPricePerDay()) <= parseFloat(maxPrice);
-        });
+      if (maxPrice !== null && maxPrice !== undefined && maxPrice !== '') {
+        var maxP = parseFloat(maxPrice);
+        if (isNaN(maxP)) {
+          return { success: false, message: 'Ju lutem shkruani cmim valid!', cars: [] };
+        }
+        if (maxP > 0) {
+          results = results.filter(function(c) {
+            return parseFloat(c.getPricePerDay()) <= maxP;
+          });
+        }
       }
       return { success: true, cars: results, count: results.length };
     } catch (err) {
-      return { success: false, message: 'Gabim gjatë kërkimit: ' + err.message, cars: [] };
+      return { success: false, message: 'Gabim gjate kerkimit: ' + err.message, cars: [] };
     }
   }
 
   sortCars(sortBy) {
     try {
+      var valid = ['price-asc', 'price-desc', 'year-asc', 'year-desc', 'brand-az', 'brand-za'];
+      if (valid.indexOf(sortBy) === -1) {
+        return { success: false, message: 'Opsion sortimi i pavlefshem!', cars: [] };
+      }
       var cars = this.repository.getAll().slice();
       if (sortBy === 'price-asc') {
         cars.sort(function(a, b) { return parseFloat(a.getPricePerDay()) - parseFloat(b.getPricePerDay()); });
@@ -117,7 +246,7 @@ class CarService {
       }
       return { success: true, cars: cars };
     } catch (err) {
-      return { success: false, message: 'Gabim gjatë sortimit: ' + err.message, cars: [] };
+      return { success: false, message: 'Gabim gjate sortimit: ' + err.message, cars: [] };
     }
   }
 
@@ -134,7 +263,7 @@ class CarService {
 
       var lines = [
         '========================================',
-        '         RAPORT I FLEET-IT - DriveX      ',
+        '      RAPORT I FLEET-IT - DriveX         ',
         '========================================',
         'Data: ' + new Date().toLocaleString(),
         '',
@@ -171,14 +300,16 @@ class CarService {
 
       return { success: true, content: lines.join('\n') };
     } catch (err) {
-      return { success: false, message: 'Gabim gjatë eksportit: ' + err.message };
+      return { success: false, message: 'Gabim gjate eksportit: ' + err.message };
     }
   }
 
   getStatistics() {
     try {
       var cars = this.repository.getAll();
-      if (cars.length === 0) return { success: true, total: 0, available: 0, rented: 0, avgPrice: 0, maxPrice: 0, minPrice: 0, totalRevenue: 0 };
+      if (cars.length === 0) {
+        return { success: true, total: 0, available: 0, rented: 0, avgPrice: '0.00', maxPrice: '0.00', minPrice: '0.00', totalRevenue: '0.00' };
+      }
       var prices = cars.map(function(c) { return parseFloat(c.getPricePerDay()); });
       var rented = cars.filter(function(c) { return !c.isAvailable(); });
       return {
@@ -193,6 +324,15 @@ class CarService {
       };
     } catch (err) {
       return { success: false, message: 'Gabim: ' + err.message };
+    }
+  }
+
+  // Metode ndihmese per eksportin e raportit ne file
+  exportToFile(content, exportPath) {
+    try {
+      return this.repository.exportToFile(content, exportPath);
+    } catch (err) {
+      return false;
     }
   }
 }
