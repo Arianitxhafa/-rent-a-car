@@ -202,16 +202,16 @@ app.post('/api/auth/reset-password', async function(req, res) {
 app.get('/api/cars', async function(req, res) {
     try {
         const result = await pool.query('SELECT id, brand, model, year, price_per_day, available FROM cars ORDER BY brand');
-        const cars = result.rows.map(function(row) {
-            return {
-                _id: String(row.id),
-                _brand: row.brand,
-                _model: row.model,
-                _year: row.year,
-                _pricePerDay: row.price_per_day,
-                _available: row.available
-            };
-        });
+       const cars = result.rows.map(function(row) {
+    return {
+        _id: String(row.id),
+        _brand: row.brand,
+        _model: row.model,
+        _year: row.year,
+        _pricePerDay: row.price_per_day,
+        _available: row.available
+    };
+});
         res.json(cars);
     } catch (err) {
         console.error(err);
@@ -346,7 +346,7 @@ app.post('/api/contact', async function(req, res) {
 
 // ===== START SERVER =====
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 5000;
 app.listen(PORT, function() {
     console.log('🚀 Server running on http://localhost:' + PORT);
     console.log('📊 Database:', process.env.DB_NAME);

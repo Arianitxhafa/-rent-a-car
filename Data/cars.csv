@@ -1,9 +1,9 @@
 id,brand,model,year,pricePerDay,available
-1,Toyota,Corolla,2020,35,false
+1,Toyota,Corolla,2020,35,true
 2,BMW,320i,2021,75,true
-3,Mercedes,C200,2022,90,true
+3,Mercedes,C200,2022,90,false
 4,Audi,A4,2021,80,true
-5,Volkswagen,Golf,2019,40,false
+5,Volkswagen,Golf,2019,40,true
 6,Ford,Focus,2020,38,true
 7,Hyundai,Tucson,2022,55,true
 8,Kia,Sportage,2021,50,true

@@ -161,15 +161,13 @@ function setupAuthLinks() {
                 '<a href="#" class="mobile-link" onclick="logout()">🚪 Dil</a>';
         }
     } else {
-        /* JO I LOGUAR — shfaq Hyj + Regjistrohu */
+        /* JO I LOGUAR — shfaq vetëm Hyr */
         actions.innerHTML =
-            '<button class="btn btn--glass btn--sm" onclick="openLoginModal()">Hyj</button>' +
-            '<a href="register.html" class="btn btn--outline btn--sm">Regjistrohu</a>' +
+            '<button class="btn btn--glass btn--sm" onclick="openLoginModal()">Hyr</button>' +
             '<a href="booking.html" class="btn btn--primary btn--sm">Rezervo Tani</a>';
         if (mobileAuth) {
             mobileAuth.innerHTML =
-                '<a href="#" class="mobile-link" onclick="openLoginModal();document.getElementById(\'mobile-menu\').classList.remove(\'open\')">🔑 Hyj</a>' +
-                '<a href="register.html" class="mobile-link">👤 Regjistrohu</a>';
+                '<a href="#" class="mobile-link" onclick="openLoginModal();document.getElementById(\'mobile-menu\').classList.remove(\'open\')">🔑 Hyr</a>';
         }
     }
 }
@@ -217,7 +215,7 @@ function handleModalLogin(e) {
     .then(function(r) { return r.json(); })
     .then(function(res) {
         btn.disabled = false;
-        btn.innerHTML = '🚀 Hyj Tani';
+        btn.innerHTML = '🚀 Hyr Tani';
         if (res.success) {
             localStorage.setItem('rentigoToken', res.token);
             localStorage.setItem('rentigoUser', JSON.stringify(res.user));
@@ -234,7 +232,7 @@ function handleModalLogin(e) {
     })
     .catch(function() {
         btn.disabled = false;
-        btn.innerHTML = '🚀 Hyj Tani';
+        btn.innerHTML = '🚀 Hyr Tani';
         msg.className = 'error';
         msg.textContent = '✗ Problem me lidhjen. Provo përsëri.';
     });

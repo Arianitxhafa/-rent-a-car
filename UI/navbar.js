@@ -52,7 +52,7 @@
     <ul class="rg-nav__links" id="rg-links">
       <li><a href="index.html"   class="rg-link ${isActive('index.html')}">Home</a></li>
       <li><a href="cars.html"    class="rg-link ${isActive('cars.html')}">Makinat</a></li>
-      <li><a href="booking.html" class="rg-link ${isActive('booking.html')}">Rezervo</a></li>
+      <li><a href="about.html"   class="rg-link ${isActive('about.html')}">Rreth Nesh</a></li>
       <li><a href="contact.html" class="rg-link ${isActive('contact.html')}">Kontakt</a></li>
     </ul>
 

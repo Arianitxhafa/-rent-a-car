@@ -26,7 +26,7 @@ function handleLogin(e) {
     .then(function(r) { return r.json(); })
     .then(function(res) {
         btn.disabled = false;
-        btn.textContent = '🚀 Hyj Tani';
+        btn.textContent = '🚀 Hyr Tani';
         if (res.success) {
             localStorage.setItem('token', res.token);
             localStorage.setItem('user', JSON.stringify(res.user));
@@ -39,7 +39,7 @@ function handleLogin(e) {
     })
     .catch(function() {
         btn.disabled = false;
-        btn.textContent = '🚀 Hyj Tani';
+        btn.textContent = '🚀 Hyr Tani';
         msg.className = 'auth-message error';
         msg.textContent = '✗ Gabim në lidhje. Provo përsëri.';
     });
