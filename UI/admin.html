@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel — Rentigo</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        :root {
+            --primary: #FF3B30;
+            --dark: #0a0a0b;
+            --dark2: #111113;
+            --dark3: #1a1a1e;
+            --border: rgba(255,255,255,0.08);
+            --text: #e8e8ec;
+            --text2: #9b9ba8;
+            --text3: #5a5a68;
+        }
+        html { scroll-behavior: smooth; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--dark); color: var(--text); }
+        .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
+
+        /* LAYOUT */
+        .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+        
+        /* SIDEBAR */
+        .sidebar {
+            background: var(--dark2); border-right: 1px solid var(--border);
+            padding: 24px 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+        }
+        .sidebar h2 { padding: 0 20px; font-size: 16px; margin-bottom: 24px; color: var(--primary); }
+        .sidebar a { display: block; padding: 12px 20px; color: var(--text2); text-decoration: none; border-left: 3px solid transparent; transition: all 0.2s; }
+        .sidebar a:hover, .sidebar a.active { background: rgba(255,59,48,0.08); border-left-color: var(--primary); color: var(--text); }
+
+        /* MAIN */
+        .admin-main { padding: 40px 20px; }
+        .admin-header { margin-bottom: 32px; }
+        .admin-header h1 { font-size: 28px; margin-bottom: 4px; }
+        .admin-header p { color: var(--text2); font-size: 14px; }
+
+        /* CARDS */
+        .card {
+            background: var(--dark3); border: 1px solid var(--border);
+            border-radius: 14px; padding: 24px; margin-bottom: 24px;
+        }
+        .card h2 { font-size: 18px; margin-bottom: 20px; }
+
+        /* FORM */
+        .form-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .form-field { display: flex; flex-direction: column; gap: 6px; }
+        .form-field--full { grid-column: 1/-1; }
+        .form-field label { font-size: 12px; font-weight: 700; color: var(--text2); text-transform: uppercase; }
+        .form-field input, .form-field select {
+            padding: 10px 12px; background: var(--dark); border: 1px solid var(--border);
+            border-radius: 8px; color: var(--text); font-family: inherit; font-size: 14px;
+            outline: none; transition: all 0.15s;
+        }
+        .form-field input:focus, .form-field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(255,59,48,0.1); }
+
+        /* TABLE */
+        .table-wrap { overflow-x: auto; }
+        table {
+            width: 100%; border-collapse: collapse; font-size: 13px;
+        }
+        th { text-align: left; padding: 12px; border-bottom: 2px solid var(--border); color: var(--text2); font-weight: 700; }
+        td { padding: 12px; border-bottom: 1px solid var(--border); }
+        tr:hover { background: rgba(255,255,255,0.02); }
+
+        /* BUTTONS */
+        .btn {
+            padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer;
+            font-family: inherit; font-weight: 600; font-size: 13px; transition: all 0.2s;
+            display: inline-flex; align-items: center; gap: 6px;
+        }
+        .btn--primary { background: var(--primary); color: white; }
+        .btn--primary:hover { opacity: 0.9; }
+        .btn--danger { background: rgba(255,59,48,0.15); color: var(--primary); }
+        .btn--ghost { background: var(--dark); border: 1px solid var(--border); color: var(--text2); }
+        .btn--ghost:hover { border-color: var(--primary); color: var(--text); }
+        .btn--sm { padding: 6px 12px; font-size: 12px; }
+
+        /* STATS */
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 32px; }
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255,59,48,0.1), rgba(255,59,48,0.04));
+            border: 1px solid rgba(255,59,48,0.15); border-radius: 14px; padding: 20px;
+            text-align: center;
+        }
+        .stat-val { font-size: 28px; font-weight: 900; color: var(--primary); margin: 8px 0; }
+        .stat-label { font-size: 12px; color: var(--text2); text-transform: uppercase; }
+
+        /* MODAL */
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.8); backdrop-filter: blur(8px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-box { background: var(--dark3); border: 1px solid var(--border); border-radius: 14px; padding: 28px; max-width: 500px; width: 90%; }
+        .modal-close { position: absolute; top: 16px; right: 16px; width: 32px; height: 32px; background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; }
+
+        /* TABS */
+        .tabs { display: flex; gap: 4px; margin-bottom: 24px; border-bottom: 1px solid var(--border); }
+        .tab { padding: 12px 16px; color: var(--text2); cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.2s; font-weight: 600; }
+        .tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+        .tab-pane { display: none; }
+        .tab-pane.active { display: block; }
+
+        @media (max-width: 900px) {
+            .admin-layout { grid-template-columns: 1fr; }
+            .sidebar { position: fixed; top: 0; left: -260px; height: auto; width: 260px; z-index: 100; }
+            .stats-grid { grid-template-columns: repeat(2, 1fr); }
+            .form-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="admin-layout">
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+        <h2>ADMIN</h2>
+        <a href="#" onclick="showTab('dashboard', event)" class="active">📊 Dashboard</a>
+        <a href="#" onclick="showTab('cars', event)">🚗 Makinat</a>
+        <a href="#" onclick="showTab('bookings', event)">📅 Rezervimet</a>
+        <a href="#" onclick="showTab('messages', event)">💬 Mesazhet</a>
+        <a href="#" onclick="showTab('users', event)">👥 Përdoruesit</a>
+        <hr style="margin: 20px 0; border: none; border-top: 1px solid var(--border);">
+        <a href="#" onclick="logout()" style="color: var(--primary);">🚪 Dil</a>
+    </aside>
+
+    <!-- MAIN -->
+    <div class="admin-main">
+        <div class="admin-header">
+            <h1 id="page-title">Dashboard</h1>
+            <p id="page-desc">Mirë se erdhe në panelin e administratorit</p>
+        </div>
+
+        <!-- DASHBOARD -->
+        <div id="dashboard" class="tab-pane active">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-label">Makinat</span>
+                    <div class="stat-val" id="total-cars">0</div>
+                    <span class="stat-label">në fleet</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Disponueshme</span>
+                    <div class="stat-val" id="avail-cars">0</div>
+                    <span class="stat-label">lirë</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Rezervimet</span>
+                    <div class="stat-val" id="total-bookings">0</div>
+                    <span class="stat-label">aktive</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Përdoruesit</span>
+                    <div class="stat-val" id="total-users">0</div>
+                    <span class="stat-label">aktiv</span>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>🚗 Makinat e Fundit</h2>
+                <div class="table-wrap">
+                    <table id="recent-cars"></table>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>📅 Rezervimet e Fundit</h2>
+                <div class="table-wrap">
+                    <table id="recent-bookings"></table>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARS -->
+        <div id="cars" class="tab-pane">
+            <div class="card">
+                <h2>➕ Shto Makinë</h2>
+                <form class="form-grid" id="car-form" onsubmit="addCar(event)">
+                    <div class="form-field"><label>Marka</label><input type="text" id="car-brand" required /></div>
+                    <div class="form-field"><label>Modeli</label><input type="text" id="car-model" required /></div>
+                    <div class="form-field"><label>Viti</label><input type="number" id="car-year" required /></div>
+                    <div class="form-field"><label>Çmimi/Ditë ($)</label><input type="number" id="car-price" step="0.01" required /></div>
+                    <div class="form-field--full">
+                        <button type="submit" class="btn btn--primary">✓ Shto Makinën</button>
+                    </div>
+                </form>
+                <div id="car-message" style="margin-top: 16px; padding: 12px; border-radius: 8px; display: none;"></div>
+            </div>
+
+            <div class="card">
+                <h2>📋 Lista e Makinave</h2>
+                <div class="table-wrap">
+                    <table id="cars-table">
+                        <thead>
+                            <tr>
+                                <th>Marka</th>
+                                <th>Modeli</th>
+                                <th>Viti</th>
+                                <th>Çmimi</th>
+                                <th>Statusi</th>
+                                <th>Aksione</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cars-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- BOOKINGS -->
+        <div id="bookings" class="tab-pane">
+            <div class="card">
+                <h2>📅 Rezervimet</h2>
+                <div class="table-wrap">
+                    <table id="bookings-table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Përdoruesi</th>
+                                <th>Makina</th>
+                                <th>Datat</th>
+                                <th>Çmim Total</th>
+                                <th>Statusi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookings-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- MESSAGES -->
+        <div id="messages" class="tab-pane">
+            <div class="card">
+                <h2>💬 Mesazhet e Kontaktit</h2>
+                <div class="table-wrap">
+                    <table id="messages-table">
+                        <thead>
+                            <tr>
+                                <th>Emri</th>
+                                <th>Email</th>
+                                <th>Tema</th>
+                                <th>Mesazhi</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messages-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- USERS -->
+        <div id="users" class="tab-pane">
+            <div class="card">
+                <h2>👥 Përdoruesit</h2>
+                <div class="table-wrap">
+                    <table id="users-table">
+                        <thead>
+                            <tr>
+                                <th>Emri</th>
+                                <th>Email</th>
+                                <th>Telefoni</th>
+                                <th>Roli</th>
+                                <th>Regjistruar</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-tbody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // CHECK ADMIN AUTH
+    var auth = checkAuth();
+    if (!auth.token || !auth.user.is_admin) {
+        alert('❌ Admin access required');
+        window.location.href = 'index.html';
+    }
+
+    // TAB SWITCHING
+    function showTab(tabName, event) {
+        if (event) event.preventDefault();
+        document.querySelectorAll('.tab-pane').forEach(function(el) { el.classList.remove('active'); });
+        document.getElementById(tabName).classList.add('active');
+    }
+
+    // ADD CAR
+    function addCar(e) {
+        e.preventDefault();
+        var brand = document.getElementById('car-brand').value;
+        var model = document.getElementById('car-model').value;
+        var year = parseInt(document.getElementById('car-year').value);
+        var price = parseFloat(document.getElementById('car-price').value);
+        var msg = document.getElementById('car-message');
+
+        fetch('/api/cars', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth.token },
+            body: JSON.stringify({ brand: brand, model: model, year: year, pricePerDay: price })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(res) {
+            if (res.success) {
+                msg.className = '';
+                msg.innerHTML = '✓ Makina u shtua me sukses!';
+                msg.style.display = 'block';
+                msg.style.background = 'rgba(48,209,88,0.1)';
+                msg.style.color = '#3fb950';
+                document.getElementById('car-form').reset();
+                loadCars();
+            }
+        });
+    }
+
+    // LOAD DATA
+    function loadCars() {
+        fetch('/api/cars')
+            .then(function(r) { return r.json(); })
+            .then(function(cars) {
+                document.getElementById('total-cars').textContent = cars.length;
+                document.getElementById('avail-cars').textContent = cars.filter(function(c) { return c._available; }).length;
+                var tbody = document.getElementById('cars-tbody');
+                tbody.innerHTML = '';
+                cars.slice(0, 10).forEach(function(car) {
+                    tbody.innerHTML += '<tr><td>' + car._brand + '</td><td>' + car._model + '</td><td>' + car._year + '</td><td>$' + car._pricePerDay + '</td><td>' + (car._available ? '✓ Lirë' : '✗ Zënë') + '</td><td><button class="btn btn--danger btn--sm" onclick="deleteCar(' + car._id + ')">Fshi</button></td></tr>';
+                });
+            });
+    }
+
+    function deleteCar(id) {
+        if (!confirm('A jesh i sigurt?')) return;
+        fetch('/api/cars/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + auth.token } })
+            .then(function() { loadCars(); });
+    }
+
+    // INIT
+    loadCars();
+    document.querySelector('.sidebar a').classList.add('active');
+</script>
+
+</body>
+</html>

@@ -1,19 +1,33 @@
 {
-  "name": "rent-a-car",
+  "name": "rentigo-rent-a-car",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Modern car rental platform for Kosovo",
+  "main": "Program.js",
   "scripts": {
+    "start": "node Program.js",
+    "dev": "nodemon Program.js",
     "test": "jest --verbose"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
+  "keywords": [
+    "rent-a-car",
+    "car-rental",
+    "rentigo",
+    "kosovo"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
   "dependencies": {
-    "express": "^5.2.1"
+    "express": "^4.18.2",
+    "pg": "^8.10.0",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.0",
+    "nodemailer": "^6.9.3",
+    "dotenv": "^16.0.3",
+    "cors": "^2.8.5",
+    "express-validator": "^7.0.0"
   },
   "devDependencies": {
-    "jest": "^30.3.0"
+    "jest": "^29.5.0",
+    "nodemon": "^2.0.20"
   }
 }

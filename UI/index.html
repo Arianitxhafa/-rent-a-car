@@ -3,224 +3,408 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rent a Car</title>
-    <link rel="stylesheet" href="style.css">
-    <meta name="color-scheme" content="light dark">
+    <title>Rentigo — Rent a Car Kosovë</title>
+    <link rel="stylesheet" href="shared.css">
+    <link rel="stylesheet" href="home.css">
 </head>
 <body>
-    <div id="toast-root" class="toast-root" aria-live="polite" aria-atomic="true"></div>
- 
-    <header class="topbar">
-        <div class="container topbar__inner">
-            <div class="brand">
-                <div class="brand__logo" aria-hidden="true">🚗</div>
-                <div class="brand__text">
-                    <div class="brand__name">Rent a Car</div>
-                    <div class="brand__tagline">Zgjidh makinën tënde, shpejt dhe bukur.</div>
-                </div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+    <div class="container topbar__inner">
+        <div class="topbar__left">
+            <span>📞 <a href="tel:+38349584584">+383 49 584 584</a></span>
+            <span>✉ <a href="mailto:info@rentigo.ks">info@rentigo.ks</a></span>
+        </div>
+        <div class="topbar__right">
+            <span>🕐 E Hënë – E Diel: 08:00 – 22:00</span>
+        </div>
+    </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar" id="navbar">
+    <div class="container navbar__inner">
+        <a href="index.html" class="logo">
+            <div class="logo__mark">
+                <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <path d="M3 14 L6 7 L16 7 L19 14 Z" fill="white" opacity="0.9"/>
+                    <rect x="2" y="13" width="18" height="5" rx="2" fill="white" opacity="0.7"/>
+                    <circle cx="6.5" cy="19.5" r="2" fill="white"/>
+                    <circle cx="15.5" cy="19.5" r="2" fill="white"/>
+                </svg>
             </div>
-            <div class="topbar__actions">
-                <button id="theme-toggle" class="icon-btn" type="button" aria-label="Ndrysho temën" title="Ndrysho temën">
-                    <span class="icon-btn__icon" aria-hidden="true">◐</span>
-                </button>
-                <button id="open-search" class="btn btn--ghost" type="button" onclick="toggleSearchPanel()">
-                    ⌕ Kërkim &amp; Sortim
-                </button>
-                <button id="open-export" class="btn btn--ghost" type="button" onclick="doExport()">
-                    ↓ Eksporto
-                </button>
-                <button id="open-add" class="btn btn--primary" type="button">
-                    Shto makinë
-                </button>
+            <div class="logo__text">
+                <span class="logo__name">Rentigo</span>
+                <span class="logo__tagline">Rent a Car Kosovo</span>
+            </div>
+        </a>
+
+        <ul class="nav__links">
+            <li><a href="index.html" class="nav__link active">Home</a></li>
+            <li><a href="cars.html" class="nav__link">Makinat</a></li>
+            <li><a href="booking.html" class="nav__link">Rezervo</a></li>
+            <li><a href="contact.html" class="nav__link">Kontakt</a></li>
+        </ul>
+
+        <!-- Navbar actions — mbushen dinamikisht nga home.js sipas statusit login -->
+        <div class="navbar__actions" id="navbar-actions">
+            <!-- GUEST (jo i loguar): -->
+            <button class="btn btn--glass btn--sm" id="btn-login" onclick="openLoginModal()">Hyj</button>
+            <a href="register.html" class="btn btn--outline btn--sm" id="btn-register">Regjistrohu</a>
+            <a href="booking.html" class="btn btn--primary btn--sm">Rezervo Tani</a>
+        </div>
+
+        <button class="hamburger" id="hamburger">
+            <span></span><span></span><span></span>
+        </button>
+    </div>
+    <div class="mobile-menu" id="mobile-menu">
+        <a href="index.html" class="mobile-link active">Home</a>
+        <a href="cars.html" class="mobile-link">Makinat</a>
+        <a href="booking.html" class="mobile-link">Rezervo</a>
+        <a href="contact.html" class="mobile-link">Kontakt</a>
+        <div class="mobile-auth" id="mobile-auth">
+            <a href="#" class="mobile-link" onclick="openLoginModal();document.getElementById('mobile-menu').classList.remove('open')">🔑 Hyj</a>
+            <a href="register.html" class="mobile-link">👤 Regjistrohu</a>
+        </div>
+        <a href="booking.html" class="mobile-link mobile-link--cta">Rezervo Tani</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" id="home">
+    <div class="hero__bg">
+        <div class="hero__bg-img" id="hero-bg"></div>
+        <div class="hero__bg-overlay"></div>
+        <div class="hero__bg-grid"></div>
+    </div>
+
+    <div class="container hero__inner">
+        <div class="hero__content">
+            <div class="hero__badge anim-fadeup" style="animation-delay:0.1s">
+                <span class="badge badge--white">⚡ #1 Rent a Car në Kosovë</span>
+            </div>
+            <h1 class="hero__title anim-fadeup" style="animation-delay:0.2s">
+                Udhëto me Stil.<br>
+                <span class="hero__title-accent">Pakufi.</span>
+            </h1>
+            <p class="hero__desc anim-fadeup" style="animation-delay:0.3s">
+                Flota jonë moderne ju pret. Dorëzim falas në aeroport, hotel dhe ku dëshironi.
+                Rezervoni tani dhe merreni makinën tuaj brenda orës.
+            </p>
+            <div class="hero__actions anim-fadeup" style="animation-delay:0.4s">
+                <a href="booking.html" class="btn btn--primary btn--xl">
+                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+                        <path d="M9 2L9 16M2 9L16 9" stroke="white" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    Rezervo Tani
+                </a>
+                <a href="cars.html" class="btn btn--glass btn--xl">Shiko Flotën →</a>
+            </div>
+            <div class="hero__trust anim-fadeup" style="animation-delay:0.5s">
+                <div class="trust-item">
+                    <span class="trust-icon">✓</span>
+                    <span>Dorëzim falas</span>
+                </div>
+                <div class="trust-item">
+                    <span class="trust-icon">✓</span>
+                    <span>Km të pakufizuar</span>
+                </div>
+                <div class="trust-item">
+                    <span class="trust-icon">✓</span>
+                    <span>Support 24/7</span>
+                </div>
             </div>
         </div>
-    </header>
- 
-    <main class="page">
-        <section class="hero">
-            <div class="container hero__inner">
-                <div class="hero__content">
-                    <h1 class="hero__title">Menaxho flotën. Rezervo më shpejt. Dukje moderne.</h1>
-                    <p class="hero__subtitle">
-                        Kontrollo disponueshmërinë në kohë reale, rezervo/kthe me një klikim dhe menaxho makinat me UI të pastër.
-                    </p>
-                    <div class="hero__controls">
-                        <div class="search">
-                            <span class="search__icon" aria-hidden="true">⌕</span>
-                            <input id="search-input" class="search__input" type="search" placeholder="Kërko sipas markës, modelit ose ID-së…" autocomplete="off" />
-                        </div>
-                        <div class="chips" role="tablist" aria-label="Filtro makinat">
-                            <button class="chip is-active" type="button" data-filter="" role="tab" aria-selected="true">Të gjitha</button>
-                            <button class="chip" type="button" data-filter="available" role="tab" aria-selected="false">Të disponueshme</button>
-                            <button class="chip" type="button" data-filter="rented" role="tab" aria-selected="false">Të zëna</button>
-                        </div>
-                    </div>
+
+        <div class="hero__car-showcase anim-fadeup" style="animation-delay:0.3s">
+            <div class="showcase__card">
+                <div class="showcase__img-wrap">
+                    <img src="https://images.unsplash.com/photo-1555215695-3004980ad54e?w=600&q=80" alt="Car" id="showcase-img" class="showcase__img" />
+                    <div class="showcase__img-glow"></div>
                 </div>
-                <div class="hero__stats" aria-label="Statistikat e flotës">
-                    <div class="stat">
-                        <div class="stat__label">Gjithsej</div>
-                        <div class="stat__value" id="stat-total">—</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat__label">Disponueshme</div>
-                        <div class="stat__value" id="stat-available">—</div>
-                    </div>
-                    <div class="stat">
-                        <div class="stat__label">Të zëna</div>
-                        <div class="stat__value" id="stat-rented">—</div>
+                <div class="showcase__info">
+                    <div class="showcase__name" id="showcase-name">Duke ngarkuar...</div>
+                    <div class="showcase__price" id="showcase-price"></div>
+                    <div class="showcase__specs" id="showcase-specs">
+                        <span>⚡ Automatik</span>
+                        <span>🛣 100km/ditë</span>
+                        <span>⛽ Diesel</span>
                     </div>
                 </div>
             </div>
-        </section>
- 
-        <!-- SEARCH & SORT PANEL -->
-        <section id="search-panel" class="section" style="display:none;">
-            <div class="container">
-                <div class="search-panel-inner">
-                    <h2 class="section__title" style="margin-bottom:16px;">⌕ Kërkim, Sortim &amp; Statistika</h2>
-                    <div class="search-panel-grid">
-                        <div class="field">
-                            <label class="field__label">Kërko Markë / Model</label>
-                            <input class="field__input" type="text" id="search-query" placeholder="p.sh. BMW, Corolla..." />
-                        </div>
-                        <div class="field">
-                            <label class="field__label">Çmimi Maksimal ($)</label>
-                            <input class="field__input" type="number" id="search-price" placeholder="p.sh. 60" min="0" />
-                        </div>
-                        <div class="field">
-                            <label class="field__label">Sortim</label>
-                            <select id="sort-select" class="field__input">
-                                <option value="">-- Zgjidh Sortim --</option>
-                                <option value="price-asc">Çmimi: Nga më i lirë</option>
-                                <option value="price-desc">Çmimi: Nga më i shtrenjtë</option>
-                                <option value="year-desc">Viti: Nga më i ri</option>
-                                <option value="year-asc">Viti: Nga më i vjetër</option>
-                                <option value="brand-az">Marka: A-Z</option>
-                                <option value="brand-za">Marka: Z-A</option>
-                            </select>
-                        </div>
-                    </div>
-                    <div class="search-panel-actions">
-                        <button class="btn btn--primary" onclick="doSearch()">⌕ Kërko</button>
-                        <button class="btn btn--ghost" onclick="doSort()">↕ Sorto</button>
-                        <button class="btn btn--ghost" onclick="loadStatistics()">◎ Statistika</button>
-                        <button class="btn btn--ghost" onclick="clearSearch()">✕ Pastro</button>
-                    </div>
-                    <div id="search-message" class="search-msg"></div>
-                    <div id="statistics-panel" style="display:none;" class="statistics-panel">
-                        <h3 class="stats-panel-title">Statistikat e Fleet-it</h3>
-                        <div class="stats-panel-grid">
-                            <div class="stats-panel-card">
-                                <div class="stats-panel-label">Total Makina</div>
-                                <div class="stats-panel-value" id="sp-total">—</div>
-                            </div>
-                            <div class="stats-panel-card">
-                                <div class="stats-panel-label">Disponueshme</div>
-                                <div class="stats-panel-value sp-green" id="sp-available">—</div>
-                            </div>
-                            <div class="stats-panel-card">
-                                <div class="stats-panel-label">Të Zëna</div>
-                                <div class="stats-panel-value sp-red" id="sp-rented">—</div>
-                            </div>
-                            <div class="stats-panel-card">
-                                <div class="stats-panel-label">Çmimi Mesatar/Ditë</div>
-                                <div class="stats-panel-value sp-blue" id="sp-avg">—</div>
-                            </div>
-                            <div class="stats-panel-card">
-                                <div class="stats-panel-label">Çmimi Maksimal</div>
-                                <div class="stats-panel-value" id="sp-max">—</div>
-                            </div>
-                            <div class="stats-panel-card">
-                                <div class="stats-panel-label">Çmimi Minimal</div>
-                                <div class="stats-panel-value" id="sp-min">—</div>
-                            </div>
-                            <div class="stats-panel-card">
-                                <div class="stats-panel-label">Të Ardhura Ditore</div>
-                                <div class="stats-panel-value sp-blue" id="sp-revenue">—</div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+            <div class="showcase__dots" id="showcase-dots"></div>
+        </div>
+    </div>
+
+    <!-- STATS BAR -->
+    <div class="hero__stats-bar">
+        <div class="container hero__stats-inner">
+            <div class="hstat">
+                <div class="hstat__val" id="stat-avail">—</div>
+                <div class="hstat__label">Makina Disponueshme</div>
             </div>
-        </section>
- 
-        <section class="section">
-            <div class="container section__header">
-                <div>
-                    <h2 class="section__title">Flota</h2>
-                    <p class="section__hint">Kliko "Edito" për ndryshime, ose "Fshi" për ta hequr nga lista.</p>
-                </div>
-                <div class="section__right">
-                    <div id="status-pill" class="pill" aria-live="polite">Gati</div>
-                </div>
+            <div class="hstat__sep"></div>
+            <div class="hstat">
+                <div class="hstat__val">3</div>
+                <div class="hstat__label">Lokacione</div>
             </div>
-            <div class="container">
-                <div id="cars-container" class="grid" aria-live="polite"></div>
-                <div id="empty-state" class="empty" hidden>
-                    <div class="empty__title">S'ka rezultate</div>
-                    <div class="empty__text">Provo një filtër tjetër ose ndrysho kërkimin.</div>
-                </div>
+            <div class="hstat__sep"></div>
+            <div class="hstat">
+                <div class="hstat__val">24/7</div>
+                <div class="hstat__label">Support</div>
             </div>
-        </section>
-    </main>
- 
-    <!-- ADD/EDIT MODAL -->
-    <div id="modal-root" class="modal-root" hidden>
-        <div class="modal-backdrop" data-close="true"></div>
-        <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-            <div class="modal__header">
-                <h3 id="modal-title" class="modal__title">Shto makinë</h3>
-                <button class="icon-btn" type="button" data-close="true" aria-label="Mbyll" title="Mbyll">
-                    <span class="icon-btn__icon" aria-hidden="true">✕</span>
-                </button>
-            </div>
-            <div class="modal__body">
-                <form id="car-form" class="form">
-                    <div class="field">
-                        <label class="field__label" for="brand">Marka</label>
-                        <input class="field__input" type="text" id="brand" placeholder="p.sh. BMW" />
-                    </div>
-                    <div class="field">
-                        <label class="field__label" for="model">Modeli</label>
-                        <input class="field__input" type="text" id="model" placeholder="p.sh. X5" />
-                    </div>
-                    <div class="field">
-                        <label class="field__label" for="year">Viti</label>
-                        <input class="field__input" type="number" id="year" placeholder="p.sh. 2023" min="1900" max="2100" />
-                    </div>
-                    <div class="field">
-                        <label class="field__label" for="price">Çmimi/Ditë</label>
-                        <input class="field__input" type="number" id="price" placeholder="p.sh. 35" min="0" step="1" />
-                    </div>
-                </form>
-            </div>
-            <div class="modal__footer">
-                <button id="modal-cancel" class="btn btn--ghost" type="button" data-close="true">Anulo</button>
-                <button id="modal-submit" class="btn btn--primary" type="button">Ruaj</button>
+            <div class="hstat__sep"></div>
+            <div class="hstat">
+                <div class="hstat__val">5★</div>
+                <div class="hstat__label">Vlerësim</div>
             </div>
         </div>
     </div>
- 
-    <!-- EXPORT MODAL -->
-    <div id="export-modal" class="modal-root" hidden>
-        <div class="modal-backdrop" onclick="document.getElementById('export-modal').hidden=true"></div>
-        <div class="modal" role="dialog" style="max-width:680px;">
-            <div class="modal__header">
-                <h3 class="modal__title">Raporti i Fleet-it</h3>
-                <button class="icon-btn" type="button" onclick="document.getElementById('export-modal').hidden=true">
-                    <span class="icon-btn__icon">✕</span>
-                </button>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section">
+    <div class="container">
+        <div class="features-grid">
+            <div class="feat reveal">
+                <div class="feat__icon">🏅</div>
+                <h3>Shërbim i Shkëlqyer</h3>
+                <p>Mijëra klientë të kënaqur me shërbimin tonë të qiradhënies.</p>
             </div>
-            <div class="modal__body">
-                <pre id="export-content" class="export-pre"></pre>
+            <div class="feat feat--highlight reveal reveal-delay-1">
+                <div class="feat__icon">🔑</div>
+                <h3>Rezervo & Merr Menjëherë</h3>
+                <p>Rezervoni online dhe makina juaj është gati brenda 1 ore.</p>
             </div>
-            <div class="modal__footer">
-                <button class="btn btn--ghost" onclick="document.getElementById('export-modal').hidden=true">Mbyll</button>
+            <div class="feat reveal reveal-delay-2">
+                <div class="feat__icon">🛡</div>
+                <h3>Siguri e Garantuar</h3>
+                <p>Të gjitha makinat tona janë të inspektuara dhe të siguruara plotësisht.</p>
             </div>
         </div>
     </div>
- 
-    <script src="app.js"></script>
+</section>
+
+<!-- FLEET PREVIEW -->
+<section class="fleet-preview">
+    <div class="container">
+        <div class="fleet-preview__header reveal">
+            <div>
+                <span class="section-label">Flota Jonë</span>
+                <h2 class="section-title">Makinat Tona Kryesore</h2>
+            </div>
+            <a href="cars.html" class="btn btn--outline">Shiko Të Gjitha →</a>
+        </div>
+
+        <!-- Filter -->
+        <div class="fp-filters reveal reveal-delay-1">
+            <button class="fp-filter active" onclick="fpFilter('', this)">Të Gjitha</button>
+            <button class="fp-filter" onclick="fpFilter('available', this)">Disponueshme</button>
+            <button class="fp-filter" onclick="fpFilter('rented', this)">Të Zëna</button>
+        </div>
+
+        <div class="fleet-preview__grid" id="fp-grid">
+            <!-- Skeleton -->
+            <div class="car-card"><div class="skeleton" style="height:200px"></div><div style="padding:20px"><div class="skeleton" style="height:18px;margin-bottom:10px"></div><div class="skeleton" style="height:14px;width:60%"></div></div></div>
+            <div class="car-card"><div class="skeleton" style="height:200px"></div><div style="padding:20px"><div class="skeleton" style="height:18px;margin-bottom:10px"></div><div class="skeleton" style="height:14px;width:60%"></div></div></div>
+            <div class="car-card"><div class="skeleton" style="height:200px"></div><div style="padding:20px"><div class="skeleton" style="height:18px;margin-bottom:10px"></div><div class="skeleton" style="height:14px;width:60%"></div></div></div>
+        </div>
+    </div>
+</section>
+
+<!-- WHY US -->
+<section class="why-section reveal">
+    <div class="container">
+        <div class="why-section__inner">
+            <div class="why-left">
+                <span class="section-label">Pse Rentigo</span>
+                <h2 class="section-title">4 Arsye Pse të Na Zgjedhësh</h2>
+                <p class="section-desc">Ofrojmë shërbimin më të mirë të qiradhënies në rajon me çmime të përballueshme dhe cilësi të lartë.</p>
+                <a href="cars.html" class="btn btn--primary" style="margin-top:28px">Zgjedh Makinën →</a>
+            </div>
+            <div class="why-right">
+                <div class="why-card reveal reveal-delay-1">
+                    <div class="why-card__icon">💰</div>
+                    <div>
+                        <h4>Çmim & Cilësi</h4>
+                        <p>Çmimet tona fillojnë nga 25€/ditë me cilësi premium.</p>
+                    </div>
+                </div>
+                <div class="why-card reveal reveal-delay-2">
+                    <div class="why-card__icon">🔧</div>
+                    <div>
+                        <h4>Mirëmbajtje Konstante</h4>
+                        <p>Çdo makinë inspectohet para çdo dhënieje me qira.</p>
+                    </div>
+                </div>
+                <div class="why-card reveal reveal-delay-3">
+                    <div class="why-card__icon">💬</div>
+                    <div>
+                        <h4>Support 24/7</h4>
+                        <p>Jemi gjithmonë të disponueshëm për ndihmën tuaj.</p>
+                    </div>
+                </div>
+                <div class="why-card reveal reveal-delay-4">
+                    <div class="why-card__icon">🛣</div>
+                    <div>
+                        <h4>Km të Pakufizuar</h4>
+                        <p>Eksploro lirisht pa u shqetësuar për kilometrat.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- LOCATIONS -->
+<section class="locations-section">
+    <div class="container">
+        <div class="text-center reveal" style="text-align:center;margin-bottom:48px">
+            <span class="section-label">Lokacionet</span>
+            <h2 class="section-title">Ku Mund të Na Gjeni</h2>
+        </div>
+        <div class="locations-grid">
+            <div class="loc-card reveal">
+                <img src="https://images.unsplash.com/photo-1436491865332-7a61a109cc05?w=600&q=80" alt="Prishtina Airport" class="loc-card__img" />
+                <div class="loc-card__body">
+                    <div class="loc-card__icon">✈</div>
+                    <h3>Prishtinë</h3>
+                    <p>Aeroporti Ndërkombëtar "Adem Jashari"</p>
+                    <div class="loc-card__price">Nga <strong>25€</strong>/ditë</div>
+                    <a href="booking.html" class="btn btn--primary btn--sm">Rezervo</a>
+                </div>
+            </div>
+            <div class="loc-card reveal reveal-delay-1">
+                <img src="https://images.unsplash.com/photo-1544006659-f0b21884ce1d?w=600&q=80" alt="Tirana Airport" class="loc-card__img" />
+                <div class="loc-card__body">
+                    <div class="loc-card__icon">✈</div>
+                    <h3>Tiranë</h3>
+                    <p>Aeroporti Ndërkombëtar "Nënë Tereza"</p>
+                    <div class="loc-card__price">Nga <strong>75€</strong>/ditë</div>
+                    <a href="booking.html" class="btn btn--primary btn--sm">Rezervo</a>
+                </div>
+            </div>
+            <div class="loc-card reveal reveal-delay-2">
+                <img src="https://images.unsplash.com/photo-1530521954074-e64f6810b32d?w=600&q=80" alt="Skopje Airport" class="loc-card__img" />
+                <div class="loc-card__body">
+                    <div class="loc-card__icon">✈</div>
+                    <h3>Shkup</h3>
+                    <p>Aeroporti Ndërkombëtar "Aleksandër i Madh"</p>
+                    <div class="loc-card__price">Nga <strong>75€</strong>/ditë</div>
+                    <a href="booking.html" class="btn btn--primary btn--sm">Rezervo</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- CTA BANNER -->
+<section class="cta-banner reveal">
+    <div class="container">
+        <div class="cta-inner">
+            <div class="cta-text">
+                <h2>Gati për të Udhëtuar?</h2>
+                <p>Rezervoni tani dhe merrni 10% ulje për rezervimin tuaj të parë.</p>
+            </div>
+            <div class="cta-actions">
+                <a href="booking.html" class="btn btn--primary btn--lg">Rezervo Tani</a>
+                <a href="contact.html" class="btn btn--glass btn--lg">Na Kontaktoni</a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- FOOTER -->
+<footer class="footer">
+    <div class="container">
+        <div class="footer__grid">
+            <div>
+                <a href="index.html" class="logo" style="margin-bottom:0">
+                    <div class="logo__mark"><svg width="22" height="22" viewBox="0 0 22 22" fill="none"><path d="M3 14 L6 7 L16 7 L19 14 Z" fill="white" opacity="0.9"/><rect x="2" y="13" width="18" height="5" rx="2" fill="white" opacity="0.7"/><circle cx="6.5" cy="19.5" r="2" fill="white"/><circle cx="15.5" cy="19.5" r="2" fill="white"/></svg></div>
+                    <div class="logo__text"><span class="logo__name">Rentigo</span><span class="logo__tagline">Rent a Car Kosovo</span></div>
+                </a>
+                <p class="footer__brand-desc">Aeroporti Ndërkombëtar "Adem Jashari", 10000 Prishtinë, Kosovë</p>
+                <div class="footer__socials">
+                    <a href="#" class="footer__social">📘</a>
+                    <a href="#" class="footer__social">📸</a>
+                    <a href="#" class="footer__social">🐦</a>
+                </div>
+            </div>
+            <div class="footer__col">
+                <h4>Navigimi</h4>
+                <a href="index.html">Home</a>
+                <a href="cars.html">Makinat</a>
+                <a href="booking.html">Rezervo</a>
+                <a href="contact.html">Kontakt</a>
+            </div>
+            <div class="footer__col">
+                <h4>Shërbime</h4>
+                <a href="booking.html">Rezervim i Ri</a>
+                <a href="cars.html">Lista e Makinave</a>
+                <span>Dorëzim Falas</span>
+                <span>Km të Pakufizuar</span>
+            </div>
+            <div class="footer__col">
+                <h4>Kontakt</h4>
+                <span>📞 +383 49 584 584</span>
+                <span>✉ info@rentigo.ks</span>
+                <span>🕐 08:00 – 22:00</span>
+                <span>📍 Aeroporti i Prishtinës</span>
+            </div>
+        </div>
+        <div class="footer__bottom">
+            <p>© 2024 Rentigo. Të gjitha të drejtat e rezervuara.</p>
+            <div class="footer__bottom-links">
+                <a href="#">Privatësia</a>
+                <a href="#">Kushtet</a>
+            </div>
+        </div>
+    </div>
+</footer>
+
+<div id="toast" class="toast"></div>
+<button class="scroll-top" id="scroll-top" onclick="window.scrollTo({top:0,behavior:'smooth'})">↑</button>
+
+<!-- LOGIN MODAL — qendër ekranit -->
+<div id="login-modal" onclick="if(event.target===this)closeLoginModal()">
+    <div class="login-modal-card">
+        <button class="login-modal-close" onclick="closeLoginModal()" title="Mbyll">✕</button>
+
+        <h2>Hyj në Llogarinë Tuaj</h2>
+        <p>Hyni për të rezervuar makinën tuaj.</p>
+
+        <form class="login-modal-form" onsubmit="handleModalLogin(event)">
+            <div class="modal-field-group">
+                <label>Email</label>
+                <input type="email" id="modal-email" placeholder="email@shembull.com" autocomplete="email" required />
+            </div>
+            <div class="modal-field-group">
+                <label>Fjalëkalimi</label>
+                <input type="password" id="modal-pass" placeholder="••••••••" autocomplete="current-password" required />
+            </div>
+            <div id="modal-message"></div>
+            <button type="submit" class="btn btn--primary btn--lg modal-btn">
+                🚀 Hyj Tani
+            </button>
+        </form>
+
+        <div class="modal-divider">ose</div>
+
+        <div class="modal-links">
+            <p>Nuk ke llogari? <a href="register.html">Regjistrohu këtu →</a></p>
+            <p><a href="forgot-password.html">Harrova fjalëkalimin</a></p>
+        </div>
+    </div>
+</div>
+
+<!-- CAR DETAILS MODAL -->
+<div id="car-details-modal" onclick="if(event.target===this)closeCarDetailsModal()">
+    <div id="car-details-body"></div>
+</div>
+
+<script src="shared.js"></script>
+<script src="home.js"></script>
 </body>
 </html>
- 

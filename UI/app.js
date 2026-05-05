@@ -1,527 +1,359 @@
-var state = {
-    filter: '',
-    search: '',
-    cars: [],
-    modalMode: 'add', // 'add' | 'edit'
+/* ══════════════════════════════════════════
+   RENTIGO — app.js
+   Filtrim CLIENT-SIDE (nuk varet nga route /list/)
+══════════════════════════════════════════ */
+
+var allCars = [];       // të gjitha makinat nga serveri
+var currentFilter = ''; // '', 'available', 'rented'
+var editingId = null;
+
+/* ── IMAZHET sipas markës ── */
+var IMGS = {
+  'BMW':        'https://images.unsplash.com/photo-1555215695-3004980ad54e?w=600&q=80',
+  'Mercedes':   'https://images.unsplash.com/photo-1618843479313-40f8afb4b4d8?w=600&q=80',
+  'Audi':       'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?w=600&q=80',
+  'Toyota':     'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?w=600&q=80',
+  'Volkswagen': 'https://images.unsplash.com/photo-1471444928139-48c5bf5173f8?w=600&q=80',
+  'Ford':       'https://images.unsplash.com/photo-1551830820-c8d85ac89e77?w=600&q=80',
+  'Hyundai':    'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=600&q=80',
+  'Kia':        'https://images.unsplash.com/photo-1600712242805-5f78671b24da?w=600&q=80',
+  'Porsche':    'https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=600&q=80',
+  'Tesla':      'https://images.unsplash.com/photo-1536700503339-1e4b06520771?w=600&q=80',
+  'DEFAULT':    'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&q=80'
 };
 
-function $(id) {
-    return document.getElementById(id);
+function getImg(brand)  { return IMGS[brand] || IMGS['DEFAULT']; }
+function getCat(price)  {
+  var p = parseFloat(price);
+  if (p >= 90) return 'Luxury';
+  if (p >= 60) return 'Premium';
+  if (p >= 40) return 'Compact';
+  return 'Economy';
+}
+function esc(s) {
+  return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function isAvail(car) {
+  return car._available === true || car._available === 'true';
 }
 
-function escapeHtml(s) {
-    return String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-}
-
-function setStatus(text, isLoading) {
-    var pill = $('status-pill');
-    if (!pill) return;
-    pill.textContent = text;
-    if (isLoading) pill.classList.add('is-loading');
-    else pill.classList.remove('is-loading');
-}
-
-function toast(type, title, text) {
-    var root = $('toast-root');
-    if (!root) return;
-
-    var icon = type === 'ok' ? '✓' : type === 'warn' ? '!' : '⨯';
-    var el = document.createElement('div');
-    el.className = 'toast toast--' + (type === 'ok' ? 'ok' : type === 'warn' ? 'warn' : 'err');
-    el.innerHTML =
-        '<div class="toast__icon" aria-hidden="true">' + icon + '</div>' +
-        '<div class="toast__body">' +
-        '<p class="toast__title">' + escapeHtml(title || '') + '</p>' +
-        (text ? '<p class="toast__text">' + escapeHtml(text) + '</p>' : '') +
-        '</div>';
-
-    root.appendChild(el);
-    setTimeout(function() {
-        if (el && el.parentNode) el.parentNode.removeChild(el);
-    }, 3200);
-}
-
-function setTheme(theme) {
-    document.body.setAttribute('data-theme', theme);
-    try { localStorage.setItem('theme', theme); } catch (e) {}
-}
-
-function initTheme() {
-    var saved = null;
-    try { saved = localStorage.getItem('theme'); } catch (e) {}
-    if (saved === 'light' || saved === 'dark') return setTheme(saved);
-    var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    setTheme(prefersDark ? 'dark' : 'light');
-}
-
-function openModal(mode) {
-    state.modalMode = mode;
-    var root = $('modal-root');
-    var title = $('modal-title');
-    var submit = $('modal-submit');
-    if (!root || !title || !submit) return;
-
-    title.textContent = mode === 'edit' ? 'Edito makinë' : 'Shto makinë';
-    submit.textContent = mode === 'edit' ? 'Ruaj ndryshimet' : 'Shto';
-
-    // In edit mode, ID is readonly
-    $('id').readOnly = mode === 'edit';
-
-    root.hidden = false;
-    document.body.style.overflow = 'hidden';
-}
-
-function closeModal() {
-    var root = $('modal-root');
-    if (!root) return;
-    root.hidden = true;
-    document.body.style.overflow = '';
-}
-
-function resetForm() {
-    $('id').value = '';
-    $('brand').value = '';
-    $('model').value = '';
-    $('year').value = '';
-    $('price').value = '';
-    $('id').readOnly = false;
-}
-
-function fillEditForm(car) {
-    $('id').value = car._id;
-    $('brand').value = car._brand;
-    $('model').value = car._model;
-    $('year').value = car._year;
-    $('price').value = car._pricePerDay;
-}
-
-function getApiUrl() {
-    return state.filter ? '/api/cars/list/' + state.filter : '/api/cars';
-}
-
-function applySearch(cars) {
-    var q = (state.search || '').trim().toLowerCase();
-    if (!q) return cars;
-    return cars.filter(function(c) {
-        return (
-            String(c._id).toLowerCase().indexOf(q) !== -1 ||
-            String(c._brand).toLowerCase().indexOf(q) !== -1 ||
-            String(c._model).toLowerCase().indexOf(q) !== -1
-        );
-    });
-}
-
-function renderStats(carsAll) {
-    var total = carsAll.length;
-    var available = carsAll.filter(function(c) { return !!c._available; }).length;
-    var rented = total - available;
-    var elTotal = $('stat-total');
-    var elAvail = $('stat-available');
-    var elRent = $('stat-rented');
-    if (elTotal) elTotal.textContent = String(total);
-    if (elAvail) elAvail.textContent = String(available);
-    if (elRent) elRent.textContent = String(rented);
-}
-
-function renderCars() {
-    var container = $('cars-container');
-    var empty = $('empty-state');
-    if (!container) return;
-
-    var cars = applySearch(state.cars);
-    container.innerHTML = '';
-
-    if (!cars.length) {
-        if (empty) empty.hidden = false;
-        return;
-    }
-    if (empty) empty.hidden = true;
-
-    cars.forEach(function(car) {
-        var available = !!car._available;
-        var card = document.createElement('div');
-        card.className = 'car-card';
-        card.setAttribute('data-id', car._id);
-
-        var badgeClass = available ? 'badge badge--ok' : 'badge badge--no';
-        var badgeText = available ? 'Disponueshme' : 'E zënë';
-
-        card.innerHTML =
-            '<div class="car-card__head">' +
-                '<h3 class="car-card__title">' + escapeHtml(car._brand) + ' ' + escapeHtml(car._model) + '</h3>' +
-                '<span class="' + badgeClass + '">' + badgeText + '</span>' +
-            '</div>' +
-            '<div class="meta">' +
-                '<div class="meta__item"><div class="meta__label">ID</div><div class="meta__value">' + escapeHtml(car._id) + '</div></div>' +
-                '<div class="meta__item"><div class="meta__label">Viti</div><div class="meta__value">' + escapeHtml(car._year) + '</div></div>' +
-                '<div class="meta__item"><div class="meta__label">Çmimi/Ditë</div><div class="meta__value">$' + escapeHtml(car._pricePerDay) + '</div></div>' +
-                '<div class="meta__item"><div class="meta__label">Status</div><div class="meta__value">' + badgeText + '</div></div>' +
-            '</div>' +
-            '<div class="card-actions">' +
-                (available
-                    ? '<button class="btn btn--rent" type="button" data-action="rent">Rezervo</button>'
-                    : '<button class="btn btn--return" type="button" data-action="return">Kthe</button>'
-                ) +
-                '<button class="btn btn--update" type="button" data-action="edit">Edito</button>' +
-                '<button class="btn btn--delete" type="button" data-action="delete">Fshi</button>' +
-            '</div>';
-
-        container.appendChild(card);
-    });
-}
-
+/* ══════════════════════════════════════════
+   1. NGARKO MAKINAT — vetëm GET /api/cars
+══════════════════════════════════════════ */
 function loadCars() {
-    setStatus('Duke ngarkuar…', true);
-    return fetch(getApiUrl())
-        .then(function(res) { return res.json(); })
-        .then(function(cars) {
-            state.cars = Array.isArray(cars) ? cars : [];
-            renderStats(state.cars);
-            renderCars();
-            setStatus('Gati', false);
-        })
-        .catch(function() {
-            setStatus('Gabim në ngarkim', false);
-            toast('err', 'Gabim', 'S’u arrit të ngarkohen të dhënat.');
-        });
+  fetch('/api/cars')
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(cars) {
+      allCars = Array.isArray(cars) ? cars : [];
+      applyFilters();
+      updateStats();
+    })
+    .catch(function(err) {
+      console.error('loadCars error:', err);
+      var grid = document.getElementById('cars-container');
+      if (grid) grid.innerHTML =
+        '<div class="empty-state">' +
+          '<div class="empty-state-icon">⚠️</div>' +
+          '<h3>Gabim në lidhje</h3>' +
+          '<p>Sigurohu që serveri është aktiv: <strong>node Program.js</strong></p>' +
+        '</div>';
+      var cnt = document.getElementById('cars-count');
+      if (cnt) cnt.textContent = '0 makina';
+    });
 }
 
+/* ══════════════════════════════════════════
+   2. FILTRIM + KËRKIM — client-side
+══════════════════════════════════════════ */
+function applyFilters() {
+  var searchEl = document.getElementById('search-inp');
+  var search   = searchEl ? searchEl.value.toLowerCase() : '';
+
+  var filtered = allCars.filter(function(c) {
+    // filtro sipas statusit
+    if (currentFilter === 'available' && !isAvail(c)) return false;
+    if (currentFilter === 'rented'    &&  isAvail(c)) return false;
+    // filtro sipas kërkimit
+    if (search && (c._brand + ' ' + c._model).toLowerCase().indexOf(search) === -1) return false;
+    return true;
+  });
+
+  renderCars(filtered);
+}
+
+function setFilter(filter, btn) {
+  currentFilter = filter;
+  document.querySelectorAll('.fbtn').forEach(function(b) { b.classList.remove('active'); });
+  if (btn) btn.classList.add('active');
+  applyFilters();
+}
+
+function searchCars(val) {
+  applyFilters();
+}
+
+/* ══════════════════════════════════════════
+   3. SHFAQ KARTAT
+══════════════════════════════════════════ */
+function renderCars(cars) {
+  var grid  = document.getElementById('cars-container');
+  var count = document.getElementById('cars-count');
+  if (!grid) return;
+
+  if (count) count.textContent = cars.length + ' makina të gjetura';
+
+  if (!cars.length) {
+    grid.innerHTML =
+      '<div class="empty-state">' +
+        '<div class="empty-state-icon">🚗</div>' +
+        '<h3>Asnjë makinë e gjetur</h3>' +
+        '<p>Provo të ndryshosh filtrin ose kërkimin.</p>' +
+      '</div>';
+    return;
+  }
+
+  grid.innerHTML = '';
+  cars.forEach(function(car, i) {
+    var avail = isAvail(car);
+    var card  = document.createElement('div');
+    card.className = 'car-card';
+    card.style.animationDelay = (i * 0.07) + 's';
+    card.innerHTML =
+      '<div class="car-img">' +
+        '<img src="' + getImg(car._brand) + '" alt="' + esc(car._brand) + '"' +
+          ' loading="lazy" onerror="this.src=\'' + IMGS['DEFAULT'] + '\'" />' +
+        '<div class="car-img-overlay"></div>' +
+        '<span class="car-status-badge ' + (avail ? 'badge-available' : 'badge-rented') + '">' +
+          (avail ? '● Lirë' : '● Zënë') +
+        '</span>' +
+        '<span class="car-category">' + getCat(car._pricePerDay) + '</span>' +
+      '</div>' +
+      '<div class="car-body">' +
+        '<div class="car-name">' + esc(car._brand) + ' ' + esc(car._model) + '</div>' +
+        '<div class="car-year">Viti ' + esc(String(car._year)) + ' &nbsp;·&nbsp; ID: ' + esc(car._id) + '</div>' +
+        '<div class="car-specs">' +
+          '<div class="spec"><label>Çmimi</label><span class="spec-price">$' + car._pricePerDay + '</span></div>' +
+          '<div class="spec"><label>Kategoria</label><span>' + getCat(car._pricePerDay) + '</span></div>' +
+          '<div class="spec"><label>Statusi</label><span>' + (avail ? '✓ Lirë' : '✗ Zënë') + '</span></div>' +
+        '</div>' +
+        '<div class="car-actions car-actions-3">' +
+          (avail
+            ? '<button class="btn-rent" onclick="rentCar(\'' + esc(car._id) + '\')">🔑 Rezervo</button>'
+            : '<button class="btn-return" onclick="returnCar(\'' + esc(car._id) + '\')">↩ Kthe</button>'
+          ) +
+          '<button class="btn-edit" onclick="openEdit(\'' + esc(car._id) + '\',\'' +
+            esc(car._brand) + '\',\'' + esc(car._model) + '\',\'' +
+            esc(String(car._year)) + '\',\'' + esc(String(car._pricePerDay)) + '\')">✏ Edito</button>' +
+          '<button class="btn-del" onclick="deleteCar(\'' + esc(car._id) + '\')">🗑 Fshi</button>' +
+        '</div>' +
+      '</div>';
+    grid.appendChild(card);
+  });
+}
+
+/* ══════════════════════════════════════════
+   4. STATISTIKA
+══════════════════════════════════════════ */
+function updateStats() {
+  var total   = allCars.length;
+  var avail   = allCars.filter(isAvail).length;
+  var rented  = total - avail;
+  var revenue = allCars.reduce(function(s,c){ return s + parseFloat(c._pricePerDay||0); }, 0);
+
+  setText('hs-total',  total);
+  setText('hs-avail',  avail);
+  setText('hs-rented', rented);
+  setText('st-total',  total);
+  setText('st-avail',  avail);
+  setText('st-rented', rented);
+  setText('st-revenue','$' + revenue.toFixed(0));
+  setText('nav-status', avail + ' disponueshme');
+}
+
+function setText(id, val) {
+  var el = document.getElementById(id);
+  if (el) el.textContent = val;
+}
+
+/* ══════════════════════════════════════════
+   5. RENT / RETURN
+══════════════════════════════════════════ */
 function rentCar(id) {
-    setStatus('Duke rezervuar…', true);
-    return fetch('/api/cars/rent/' + id, { method: 'PUT' })
-        .then(function(res) { return res.json(); })
-        .then(function(result) {
-            toast('ok', 'Rezervim', result && result.message ? result.message : 'U krye me sukses.');
-            return loadCars();
-        })
-        .finally(function() { setStatus('Gati', false); });
+  fetch('/api/cars/rent/' + id, { method: 'PUT' })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      showToast(res.success ? '✓ ' + res.message : '✗ ' + res.message, res.success ? 'ok' : 'err');
+      loadCars();
+    })
+    .catch(function() { showToast('✗ Gabim lidhje!', 'err'); });
 }
 
 function returnCar(id) {
-    setStatus('Duke kthyer…', true);
-    return fetch('/api/cars/return/' + id, { method: 'PUT' })
-        .then(function(res) { return res.json(); })
-        .then(function(result) {
-            toast('ok', 'Kthim', result && result.message ? result.message : 'U krye me sukses.');
-            return loadCars();
-        })
-        .finally(function() { setStatus('Gati', false); });
-}
-
-function confirmDelete(id) {
-    // Lightweight confirm using browser confirm, but with toast feedback.
-    // (Keeping it simple without adding a second modal type.)
-    var ok = confirm('A jeni i sigurt qe doni ta fshini kete makine?');
-    if (!ok) return;
-    setStatus('Duke fshirë…', true);
-    fetch('/api/cars/' + id, { method: 'DELETE' })
-        .then(function(res) { return res.json(); })
-        .then(function(result) {
-            toast('ok', 'Fshirje', result && result.message ? result.message : 'U fshi me sukses.');
-            loadCars();
-        })
-        .catch(function() {
-            toast('err', 'Gabim', 'S’u arrit të fshihet makina.');
-        })
-        .finally(function() { setStatus('Gati', false); });
-}
-
-function submitModal() {
-    var id = $('id').value.trim();
-    var brand = $('brand').value.trim();
-    var model = $('model').value.trim();
-    var year = $('year').value;
-    var price = $('price').value;
-
-    if (!id || !brand || !model || !year || !price) {
-        toast('warn', 'Kujdes', 'Plotëso të gjitha fushat.');
-        return;
-    }
-
-    if (state.modalMode === 'edit') {
-        setStatus('Duke ruajtur…', true);
-        fetch('/api/cars/update/' + id, {
-            method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                brand: brand,
-                model: model,
-                year: year,
-                pricePerDay: price,
-                available: true
-            })
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(result) {
-            toast('ok', 'U ruajt', result && result.message ? result.message : 'Ndryshimet u ruajtën.');
-            closeModal();
-            resetForm();
-            loadCars();
-        })
-        .catch(function() {
-            toast('err', 'Gabim', 'S’u arrit të ruhet makina.');
-        })
-        .finally(function() { setStatus('Gati', false); });
-        return;
-    }
-
-    setStatus('Duke shtuar…', true);
-    fetch('/api/cars', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            id: id,
-            brand: brand,
-            model: model,
-            year: year,
-            pricePerDay: price,
-            available: true
-        })
+  fetch('/api/cars/return/' + id, { method: 'PUT' })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      showToast(res.success ? '✓ ' + res.message : '✗ ' + res.message, res.success ? 'ok' : 'err');
+      loadCars();
     })
-    .then(function(res) { return res.json(); })
-    .then(function() {
-        toast('ok', 'U shtua', 'Makina u shtua me sukses.');
-        closeModal();
-        resetForm();
-        loadCars();
+    .catch(function() { showToast('✗ Gabim lidhje!', 'err'); });
+}
+
+/* ══════════════════════════════════════════
+   6. SHTO MAKINË
+══════════════════════════════════════════ */
+function addCar() {
+  var brand = (document.getElementById('brand').value || '').trim();
+  var model = (document.getElementById('model').value || '').trim();
+  var year  = (document.getElementById('year').value  || '').trim();
+  var price = (document.getElementById('price').value || '').trim();
+  var msg   = document.getElementById('add-msg');
+
+  if (!brand || !model || !year || !price) {
+    setMsg(msg, '⚠ Plotëso të gjitha fushat!', 'err'); return;
+  }
+  if (parseInt(year) < 1990 || parseInt(year) > 2030) {
+    setMsg(msg, '⚠ Viti duhet të jetë mes 1990-2030!', 'err'); return;
+  }
+  if (parseFloat(price) <= 0) {
+    setMsg(msg, '⚠ Çmimi duhet të jetë pozitiv!', 'err'); return;
+  }
+
+  fetch('/api/cars', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ brand: brand, model: model, year: year, pricePerDay: price })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.success !== false) {
+      setMsg(msg, '✓ Makina u shtua me sukses!', 'ok');
+      document.getElementById('brand').value = '';
+      document.getElementById('model').value = '';
+      document.getElementById('year').value  = '';
+      document.getElementById('price').value = '';
+      loadCars();
+      showToast('✓ Makina u shtua!', 'ok');
+    } else {
+      setMsg(msg, '✗ ' + (res.message || 'Gabim!'), 'err');
+    }
+  })
+  .catch(function() { setMsg(msg, '✗ Gabim lidhje!', 'err'); });
+}
+
+/* ══════════════════════════════════════════
+   7. DELETE
+══════════════════════════════════════════ */
+function deleteCar(id) {
+  if (!confirm('A jeni i sigurt që doni ta fshini këtë makinë?')) return;
+  fetch('/api/cars/' + id, { method: 'DELETE' })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+      showToast(res.success ? '✓ ' + res.message : '✗ ' + res.message, res.success ? 'ok' : 'err');
+      loadCars();
     })
-    .catch(function() {
-        toast('err', 'Gabim', 'S’u arrit të shtohet makina.');
-    })
-    .finally(function() { setStatus('Gati', false); });
+    .catch(function() { showToast('✗ Gabim lidhje!', 'err'); });
 }
 
-function setFilter(filter) {
-    state.filter = filter || '';
-    var chips = document.querySelectorAll('.chip[data-filter]');
-    for (var i = 0; i < chips.length; i++) {
-        var chip = chips[i];
-        var isActive = chip.getAttribute('data-filter') === state.filter;
-        chip.classList.toggle('is-active', isActive);
-        chip.setAttribute('aria-selected', isActive ? 'true' : 'false');
-    }
-    loadCars();
+/* ══════════════════════════════════════════
+   8. EDIT MODAL
+══════════════════════════════════════════ */
+function openEdit(id, brand, model, year, price) {
+  editingId = id;
+  document.getElementById('edit-id-label').textContent = id;
+  document.getElementById('e-brand').value = brand;
+  document.getElementById('e-model').value = model;
+  document.getElementById('e-year').value  = year;
+  document.getElementById('e-price').value = price;
+  setMsg(document.getElementById('edit-msg'), '', '');
+  document.getElementById('edit-modal').classList.add('open');
+  document.body.style.overflow = 'hidden';
 }
 
-function initUi() {
-    initTheme();
-
-    var themeToggle = $('theme-toggle');
-    if (themeToggle) {
-        themeToggle.addEventListener('click', function() {
-            var current = document.body.getAttribute('data-theme') || 'dark';
-            setTheme(current === 'dark' ? 'light' : 'dark');
-        });
-    }
-
-    var openAdd = $('open-add');
-    if (openAdd) {
-        openAdd.addEventListener('click', function() {
-            resetForm();
-            openModal('add');
-        });
-    }
-
-    var modalRoot = $('modal-root');
-    if (modalRoot) {
-        modalRoot.addEventListener('click', function(e) {
-            var t = e.target;
-            if (t && t.getAttribute && t.getAttribute('data-close') === 'true') {
-                closeModal();
-            }
-        });
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && !modalRoot.hidden) closeModal();
-        });
-    }
-
-    var modalSubmit = $('modal-submit');
-    if (modalSubmit) modalSubmit.addEventListener('click', submitModal);
-
-    var searchInput = $('search-input');
-    if (searchInput) {
-        var timer = null;
-        searchInput.addEventListener('input', function() {
-            clearTimeout(timer);
-            timer = setTimeout(function() {
-                state.search = searchInput.value || '';
-                renderCars();
-            }, 120);
-        });
-    }
-
-    var chipsWrap = document.querySelector('.chips');
-    if (chipsWrap) {
-        chipsWrap.addEventListener('click', function(e) {
-            var btn = e.target && e.target.closest ? e.target.closest('.chip[data-filter]') : null;
-            if (!btn) return;
-            setFilter(btn.getAttribute('data-filter') || '');
-        });
-    }
-
-    var container = $('cars-container');
-    if (container) {
-        container.addEventListener('click', function(e) {
-            var btn = e.target && e.target.closest ? e.target.closest('button[data-action]') : null;
-            if (!btn) return;
-
-            var card = btn.closest ? btn.closest('.car-card') : null;
-            var id = card ? card.getAttribute('data-id') : null;
-            if (!id) return;
-
-            var action = btn.getAttribute('data-action');
-            if (action === 'rent') return rentCar(id);
-            if (action === 'return') return returnCar(id);
-            if (action === 'delete') return confirmDelete(id);
-            if (action === 'edit') {
-                var car = state.cars.find(function(c) { return String(c._id) === String(id); });
-                if (!car) return toast('err', 'Gabim', 'Makina nuk u gjet.');
-                fillEditForm(car);
-                openModal('edit');
-                return;
-            }
-        });
-    }
+function closeEdit() {
+  document.getElementById('edit-modal').classList.remove('open');
+  document.body.style.overflow = '';
+  editingId = null;
 }
 
-/* ===== SEARCH ===== */
-function doSearch() {
-    var query = document.getElementById('search-query').value.trim();
-    var maxPrice = document.getElementById('search-price').value.trim();
-    var msg = document.getElementById('search-message');
-    var results = document.getElementById('search-results');
+function saveEdit() {
+  var brand = (document.getElementById('e-brand').value || '').trim();
+  var model = (document.getElementById('e-model').value || '').trim();
+  var year  = (document.getElementById('e-year').value  || '').trim();
+  var price = (document.getElementById('e-price').value || '').trim();
+  var msg   = document.getElementById('edit-msg');
 
-    if (maxPrice && isNaN(parseFloat(maxPrice))) {
-        msg.textContent = 'Ju lutem shkruani çmim valid!';
-        msg.className = 'form-message error';
-        return;
+  if (!brand || !model || !year || !price) {
+    setMsg(msg, '⚠ Plotëso të gjitha fushat!', 'err'); return;
+  }
+
+  fetch('/api/cars/update/' + editingId, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ brand: brand, model: model, year: year, pricePerDay: price, available: true })
+  })
+  .then(function(r) { return r.json(); })
+  .then(function(res) {
+    if (res.success) {
+      showToast('✓ ' + res.message, 'ok');
+      closeEdit();
+      loadCars();
+    } else {
+      setMsg(msg, '✗ ' + (res.message || 'Gabim!'), 'err');
     }
-
-    var url = '/api/cars/search?q=' + encodeURIComponent(query);
-    if (maxPrice) url += '&maxPrice=' + encodeURIComponent(maxPrice);
-
-    fetch(url)
-        .then(function(res) { return res.json(); })
-        .then(function(r) {
-            if (!r.success) {
-                msg.textContent = r.message;
-                msg.className = 'form-message error';
-                return;
-            }
-            msg.className = 'form-message';
-            renderSearchResults(r.cars, 'Rezultatet e Kërkimit');
-        })
-        .catch(function() {
-            msg.textContent = 'Gabim gjatë kërkimit!';
-            msg.className = 'form-message error';
-        });
+  })
+  .catch(function() { setMsg(msg, '✗ Gabim lidhje!', 'err'); });
 }
 
-/* ===== SORT ===== */
-function doSort() {
-    var sortBy = document.getElementById('sort-select').value;
-    var msg = document.getElementById('search-message');
-
-    if (!sortBy) {
-        msg.textContent = 'Zgjidh një opsion sortimi!';
-        msg.className = 'form-message error';
-        return;
-    }
-
-    fetch('/api/cars/sort/' + sortBy)
-        .then(function(res) { return res.json(); })
-        .then(function(r) {
-            if (!r.success) {
-                msg.textContent = r.message;
-                msg.className = 'form-message error';
-                return;
-            }
-            msg.className = 'form-message';
-            var labels = {
-                'price-asc': 'Çmimi: Nga më i lirë',
-                'price-desc': 'Çmimi: Nga më i shtrenjtë',
-                'year-desc': 'Viti: Nga më i ri',
-                'year-asc': 'Viti: Nga më i vjetër',
-                'brand-az': 'Marka: A-Z',
-                'brand-za': 'Marka: Z-A'
-            };
-            renderSearchResults(r.cars, 'Sortuar: ' + (labels[sortBy] || sortBy));
-        })
-        .catch(function() {
-            msg.textContent = 'Gabim gjatë sortimit!';
-            msg.className = 'form-message error';
-        });
+/* ══════════════════════════════════════════
+   9. TOAST + HELPERS
+══════════════════════════════════════════ */
+function showToast(msg, type) {
+  var t = document.getElementById('toast');
+  if (!t) return;
+  t.textContent = msg;
+  t.className = 'toast ' + (type||'') + ' show';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(function() { t.className = 'toast'; }, 3200);
 }
 
-/* ===== EXPORT ===== */
-function doExport() {
-    var msg = document.getElementById('search-message');
-    var results = document.getElementById('search-results');
-
-    fetch('/api/cars/export')
-        .then(function(res) { return res.json(); })
-        .then(function(r) {
-            if (!r.success) {
-                msg.textContent = r.message;
-                msg.className = 'form-message error';
-                return;
-            }
-            msg.textContent = r.message + ' (docs/raport.txt)';
-            msg.className = 'form-message success';
-            results.innerHTML = '<div class="export-output">' + escStr(r.content) + '</div>';
-            showToast('Raporti u eksportua me sukses!', 'success');
-        })
-        .catch(function() {
-            msg.textContent = 'Gabim gjatë eksportit!';
-            msg.className = 'form-message error';
-        });
+function setMsg(el, text, cls) {
+  if (!el) return;
+  el.textContent = text;
+  el.className = 'form-msg ' + (cls||'');
 }
 
-/* ===== RENDER SEARCH RESULTS ===== */
-function renderSearchResults(cars, title) {
-    var container = document.getElementById('search-results');
-
-    if (cars.length === 0) {
-        container.innerHTML =
-            '<div class="results-header">' +
-                '<span class="results-title">' + title + '</span>' +
-                '<span class="results-count">0 rezultate</span>' +
-            '</div>' +
-            '<div style="text-align:center;padding:30px;color:var(--text3)">Asnjë makinë e gjetur</div>';
-        return;
-    }
-
-    var html = '<div class="results-header">' +
-        '<span class="results-title">' + title + '</span>' +
-        '<span class="results-count">' + cars.length + ' makina</span>' +
-        '</div><div class="search-results-grid">';
-
-    cars.forEach(function(car) {
-        var avail = car._available;
-        html += '<div class="car-card" style="animation:cardPop 0.3s ease backwards">' +
-            '<div class="card-header">' +
-                '<div>' +
-                    '<div class="card-brand">' + escStr(car._brand) + ' ' + escStr(car._model) + '</div>' +
-                    '<div class="card-id">ID: ' + car._id + '</div>' +
-                '</div>' +
-                '<span class="badge ' + (avail ? 'badge-avail' : 'badge-rented') + '">' +
-                (avail ? 'Lirë' : 'Zënë') + '</span>' +
-            '</div>' +
-            '<div class="card-info">' +
-                '<div class="info-item"><label>Viti</label><span>' + car._year + '</span></div>' +
-                '<div class="info-item"><label>Çmimi/Ditë</label><span class="price-val">$' + car._pricePerDay + '</span></div>' +
-            '</div>' +
-        '</div>';
+/* ══════════════════════════════════════════
+   10. HAMBURGER + SCROLL
+══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function() {
+  // Hamburger
+  var burger = document.getElementById('burger');
+  var mobileMenu = document.getElementById('mobile-menu');
+  if (burger && mobileMenu) {
+    burger.addEventListener('click', function() {
+      this.classList.toggle('open');
+      mobileMenu.classList.toggle('open');
     });
+  }
 
-    html += '</div>';
-    container.innerHTML = html;
+  // Scroll navbar shadow
+  window.addEventListener('scroll', function() {
+    var nav = document.getElementById('navbar');
+    if (nav) nav.classList.toggle('scrolled', window.scrollY > 30);
+    var st = document.getElementById('scroll-top');
+    if (st) st.classList.toggle('visible', window.scrollY > 400);
+  });
+
+  // Ngarko makinat
+  loadCars();
+});
+
+function closeMobile() {
+  var burger = document.getElementById('burger');
+  var mobileMenu = document.getElementById('mobile-menu');
+  if (burger) burger.classList.remove('open');
+  if (mobileMenu) mobileMenu.classList.remove('open');
 }
-
-initUi();
-loadCars();
