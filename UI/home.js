@@ -22,7 +22,7 @@ function loadHomeData() {
         .then(function(r) { return r.json(); })
         .then(function(cars) {
             allCars = cars;
-            var avail = cars.filter(function(c) { return c._available; });
+            var avail = cars.filter(function(c) { return c.available; });
             document.getElementById('stat-avail').textContent = avail.length;
             initShowcase(cars);
             renderFP(cars, '');
@@ -64,10 +64,10 @@ function updateShowcase(i) {
     name.style.opacity = '0';
     price.style.opacity = '0';
     setTimeout(function() {
-        img.src = getCarImage(car._brand);
-        img.alt = car._brand + ' ' + car._model;
-        name.textContent = car._brand + ' ' + car._model + ' ' + car._year;
-        price.textContent = '$' + car._pricePerDay + ' / ditë';
+        img.src = getCarImage(car.brand);
+        img.alt = car.brand + ' ' + car.model;
+        name.textContent = car.brand + ' ' + car.model + ' ' + car.year;
+        price.textContent = '$' + car.pricePerDay + ' / ditë';
         img.style.transition = 'opacity 0.5s';
         name.style.transition = 'opacity 0.4s';
         price.style.transition = 'opacity 0.4s';
@@ -86,8 +86,8 @@ function goShowcase(i) {
 /* FLEET PREVIEW */
 function renderFP(cars, filter) {
     var filtered = cars;
-    if (filter === 'available') filtered = cars.filter(function(c) { return c._available; });
-    if (filter === 'rented') filtered = cars.filter(function(c) { return !c._available; });
+    if (filter === 'available') filtered = cars.filter(function(c) { return c.available; });
+    if (filter === 'rented') filtered = cars.filter(function(c) { return !c.available; });
     var grid = document.getElementById('fp-grid');
     if (!grid) return;
     var show = filtered.slice(0, 6);
@@ -97,7 +97,7 @@ function renderFP(cars, filter) {
     }
     grid.innerHTML = '';
     show.forEach(function(car, i) {
-        var avail = car._available;
+        var avail = car.available;
         var card = document.createElement('div');
         card.className = 'car-card';
         card.style.animationDelay = (i * 0.08) + 's';
@@ -105,24 +105,24 @@ function renderFP(cars, filter) {
         card.innerHTML =
             '<style>@keyframes cardIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}</style>' +
             '<div class="car-img">' +
-                '<img src="' + getCarImage(car._brand) + '" alt="' + esc(car._brand) + '" loading="lazy" onerror="this.src=\'' + CAR_IMAGES['default'] + '\'" />' +
+                '<img src="' + getCarImage(car.brand) + '" alt="' + esc(car.brand) + '" loading="lazy" onerror="this.src=\'' + CAR_IMAGES['default'] + '\'" />' +
                 '<div class="car-img__overlay"></div>' +
                 '<div class="car-img__status">' +
                     (avail ? '<span class="tag-available">● Lirë</span>' : '<span class="tag-rented">● Zënë</span>') +
                 '</div>' +
-                '<div class="car-img__category">' + getCarCategory(car._pricePerDay) + '</div>' +
+                '<div class="car-img__category">' + getCarCategory(car.pricePerDay) + '</div>' +
             '</div>' +
             '<div class="car-body">' +
-                '<div class="car-name">' + esc(car._brand) + ' ' + esc(car._model) + '</div>' +
-                '<div class="car-year">Viti ' + car._year + ' • ID: ' + car._id + '</div>' +
+                '<div class="car-name">' + esc(car.brand) + ' ' + esc(car.model) + '</div>' +
+                '<div class="car-year">Viti ' + car.year + ' • ID: ' + car.id + '</div>' +
                 '<div class="car-specs">' +
-                    '<div class="car-spec"><label>Çmimi</label><span class="car-price">$' + car._pricePerDay + '<small>/ditë</small></span></div>' +
-                    '<div class="car-spec"><label>Kategoria</label><span>' + getCarCategory(car._pricePerDay) + '</span></div>' +
+                    '<div class="car-spec"><label>Çmimi</label><span class="car-price">$' + car.pricePerDay + '<small>/ditë</small></span></div>' +
+                    '<div class="car-spec"><label>Kategoria</label><span>' + getCarCategory(car.pricePerDay) + '</span></div>' +
                     '<div class="car-spec"><label>Statusi</label><span>' + (avail ? '✓ Lirë' : '✗ Zënë') + '</span></div>' +
                 '</div>' +
                 '<div class="car-actions">' +
-                    '<a href="booking.html?car=' + car._id + '" class="btn btn--primary">🔑 Rezervo</a>' +
-                    '<button class="btn btn--glass" onclick="openCarDetails(\'' + car._id + '\')">📋 Detaje</button>' +
+                    '<a href="booking.html?car=' + car.id + '" class="btn btn--primary">🔑 Rezervo</a>' +
+                    '<button class="btn btn--glass" onclick="openCarDetails(\'' + car.id + '\')">📋 Detaje</button>' +
                 '</div>' +
             '</div>';
         grid.appendChild(card);
@@ -256,21 +256,21 @@ function openCarDetails(id) {
 
     var modal = document.getElementById('car-details-modal');
     var body = document.getElementById('car-details-body');
-    var img = getCarImage(car._brand);
-    var avail = car._available;
-    var cat = getCarCategory(car._pricePerDay);
+    var img = getCarImage(car.brand);
+    var avail = car.available;
+    var cat = getCarCategory(car.pricePerDay);
 
     /* Detaje specifike sipas markës */
-    var specs = getCarSpecs(car._brand, car._model);
+    var specs = getCarSpecs(car.brand, car.model);
 
     body.innerHTML =
         /* HEADER me foto */
         '<div class="car-detail-header">' +
-            '<img class="car-detail-header-img" src="' + img + '" alt="' + esc(car._brand) + '" onerror="this.src=\'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&q=80\'" />' +
+            '<img class="car-detail-header-img" src="' + img + '" alt="' + esc(car.brand) + '" onerror="this.src=\'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&q=80\'" />' +
             '<div class="car-detail-header-overlay"></div>' +
             '<button class="car-detail-close" onclick="closeCarDetailsModal()">✕</button>' +
             '<div class="car-detail-header-info">' +
-                '<h2>' + esc(car._brand) + ' ' + esc(car._model) + ' ' + car._year + '</h2>' +
+                '<h2>' + esc(car.brand) + ' ' + esc(car.model) + ' ' + car.year + '</h2>' +
                 '<p>' + cat + ' &nbsp;•&nbsp; ' + (avail ? '● E disponueshme' : '● E zënë') + '</p>' +
             '</div>' +
         '</div>' +
@@ -302,11 +302,11 @@ function openCarDetails(id) {
         '<div class="car-detail-footer">' +
             '<div class="car-detail-price-block">' +
                 '<span>Çmimi</span>' +
-                '<strong>$' + car._pricePerDay + '<small style="font-size:14px;font-weight:500;color:var(--text3)">/ditë</small></strong>' +
+                '<strong>$' + car.pricePerDay + '<small style="font-size:14px;font-weight:500;color:var(--text3)">/ditë</small></strong>' +
             '</div>' +
             '<div class="car-detail-footer-btns">' +
                 (avail
-                    ? '<a href="booking.html?car=' + car._id + '" class="btn btn--primary">🔑 Rezervo Tani</a>'
+                    ? '<a href="booking.html?car=' + car.id + '" class="btn btn--primary">🔑 Rezervo Tani</a>'
                     : '<span class="btn btn--glass" style="opacity:0.5;cursor:default;pointer-events:none">✗ E Zënë</span>'
                 ) +
                 '<button class="btn btn--outline" onclick="closeCarDetailsModal()">Mbyll</button>' +

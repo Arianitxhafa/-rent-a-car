@@ -340,4 +340,154 @@ module.exports = (server, service) => {
     }
   });
 
+  // ════════════════════════════════════════
+  //  ADMIN ROUTES - USER MANAGEMENT
+  // ════════════════════════════════════════
+
+  // Middleware për admin
+  function requireAdmin(req, res, next) {
+    var token = req.headers.authorization?.split(' ')[1];
+    if (!token) return res.status(401).json({ success: false, message: 'Token i munguar' });
+
+    var users = readJSON(USERS_FILE);
+    var user = users.find(function(u) { return u.token === token; });
+    if (!user || !user.is_admin) {
+      return res.status(403).json({ success: false, message: 'Vetëm administratorët mund të hyjnë!' });
+    }
+    req.user = user;
+    next();
+  }
+
+  // GET /api/admin/users - Merr të gjithë përdoruesit
+  server.get('/api/admin/users', requireAdmin, function(req, res) {
+    try {
+      var users = readJSON(USERS_FILE);
+      var safeUsers = users.map(function(u) {
+        return {
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          phone: u.phone,
+          is_admin: u.is_admin,
+          createdAt: u.createdAt
+        };
+      });
+      res.json({ success: true, users: safeUsers });
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Gabim serveri.' });
+    }
+  });
+
+  // POST /api/admin/users - Shto përdorues të ri
+  server.post('/api/admin/users', requireAdmin, function(req, res) {
+    try {
+      var b = req.body;
+      if (!b.name || !b.email || !b.password || !b.phone) {
+        return res.status(400).json({ success: false, message: 'Të gjitha fushat janë të detyrueshme!' });
+      }
+
+      var users = readJSON(USERS_FILE);
+      if (users.find(function(u) { return u.email === b.email; })) {
+        return res.status(400).json({ success: false, message: 'Email ekziston tashmë!' });
+      }
+
+      var newUser = {
+        id: String(Date.now()),
+        name: b.name,
+        email: b.email.toLowerCase(),
+        phone: b.phone,
+        password: hashPassword(b.password),
+        is_admin: b.is_admin || false,
+        createdAt: new Date().toISOString()
+      };
+
+      users.push(newUser);
+      writeJSON(USERS_FILE, users);
+
+      res.json({
+        success: true,
+        message: 'Përdoruesi u shtua me sukses!',
+        user: {
+          id: newUser.id,
+          name: newUser.name,
+          email: newUser.email,
+          phone: newUser.phone,
+          is_admin: newUser.is_admin,
+          createdAt: newUser.createdAt
+        }
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Gabim serveri.' });
+    }
+  });
+
+  // PUT /api/admin/users/:id - Përditëso përdorues
+  server.put('/api/admin/users/:id', requireAdmin, function(req, res) {
+    try {
+      var b = req.body;
+      var users = readJSON(USERS_FILE);
+      var userIdx = users.findIndex(function(u) { return u.id === req.params.id; });
+
+      if (userIdx === -1) {
+        return res.status(404).json({ success: false, message: 'Përdoruesi nuk u gjet!' });
+      }
+
+      // Përditëso fushat (pa password nëse nuk është dhënë)
+      if (b.name) users[userIdx].name = b.name;
+      if (b.email) users[userIdx].email = b.email.toLowerCase();
+      if (b.phone) users[userIdx].phone = b.phone;
+      if (b.password) users[userIdx].password = hashPassword(b.password);
+      if (typeof b.is_admin === 'boolean') users[userIdx].is_admin = b.is_admin;
+
+      writeJSON(USERS_FILE, users);
+
+      res.json({
+        success: true,
+        message: 'Përdoruesi u përditësua me sukses!',
+        user: {
+          id: users[userIdx].id,
+          name: users[userIdx].name,
+          email: users[userIdx].email,
+          phone: users[userIdx].phone,
+          is_admin: users[userIdx].is_admin,
+          createdAt: users[userIdx].createdAt
+        }
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Gabim serveri.' });
+    }
+  });
+
+  // DELETE /api/admin/users/:id - Fshi përdorues
+  server.delete('/api/admin/users/:id', requireAdmin, function(req, res) {
+    try {
+      var users = readJSON(USERS_FILE);
+      var userIdx = users.findIndex(function(u) { return u.id === req.params.id; });
+
+      if (userIdx === -1) {
+        return res.status(404).json({ success: false, message: 'Përdoruesi nuk u gjet!' });
+      }
+
+      // Mos lejo fshirjen e vetvetes
+      if (users[userIdx].id === req.user.id) {
+        return res.status(400).json({ success: false, message: 'Nuk mund të fshini veten!' });
+      }
+
+      var deletedUser = users.splice(userIdx, 1)[0];
+      writeJSON(USERS_FILE, users);
+
+      res.json({
+        success: true,
+        message: 'Përdoruesi u fshi me sukses!',
+        user: {
+          id: deletedUser.id,
+          name: deletedUser.name,
+          email: deletedUser.email
+        }
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, message: 'Gabim serveri.' });
+    }
+  });
+
 };

@@ -5,7 +5,7 @@
     "email": "arianitxhafa95@gmail.com",
     "phone": "048169820",
     "password": "624ecf52f4d30fcb885ac7f597a60521d43690bf4eda52257ad663c85ef38457",
-    "is_admin": false,
+    "is_admin": true,
     "createdAt": "2026-05-05T19:21:51.273Z"
   }
 ]

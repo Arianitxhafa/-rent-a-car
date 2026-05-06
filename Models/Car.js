@@ -18,6 +18,18 @@
   getDetails() {
     return `${this._brand} ${this._model} (${this._year}) - $${this._pricePerDay}/day`;
   }
+
+  // Serialize to plain JSON for API responses
+  toJSON() {
+    return {
+      id: this._id,
+      brand: this._brand,
+      model: this._model,
+      year: this._year,
+      pricePerDay: this._pricePerDay,
+      available: this._available
+    };
+  }
 }
 
 module.exports = Car;

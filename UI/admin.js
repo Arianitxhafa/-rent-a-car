@@ -95,18 +95,18 @@ function renderCarsTable() {
     tbody.innerHTML = '';
     allCars.forEach(function(car) {
         var row = document.createElement('tr');
-        var status = car._available ? '✓ Disponueshme' : '⊗ E zënë';
-        var statusColor = car._available ? 'color:var(--text)' : 'color:var(--primary)';
+        var status = car.available ? '✓ Disponueshme' : '⊗ E zënë';
+        var statusColor = car.available ? 'color:var(--text)' : 'color:var(--primary)';
         
         row.innerHTML = `
-            <td>${car._brand}</td>
-            <td>${car._model}</td>
-            <td>${car._year}</td>
-            <td>$${car._pricePerDay}/ditë</td>
+            <td>${car.brand}</td>
+            <td>${car.model}</td>
+            <td>${car.year}</td>
+            <td>$${car.pricePerDay}/ditë</td>
             <td style="${statusColor}; font-weight: 600;">${status}</td>
             <td>
-                <button class="btn btn--sm btn--ghost" onclick="editCar('${car._id}')">✎ Ndrysho</button>
-                <button class="btn btn--sm btn--danger" onclick="deleteCar('${car._id}')">✕ Fshi</button>
+                <button class="btn btn--sm btn--ghost" onclick="editCar('${car.id}')">✎ Ndrysho</button>
+                <button class="btn btn--sm btn--danger" onclick="deleteCar('${car.id}')">✕ Fshi</button>
             </td>
         `;
         tbody.appendChild(row);
@@ -119,13 +119,13 @@ function renderCarsList() {
     
     tbody.innerHTML = '<tr><th>Marka</th><th>Modeli</th><th>Viti</th><th>Çmimi</th><th>Statusi</th></tr>';
     allCars.slice(0, 5).forEach(function(car) {
-        var status = car._available ? '✓ Lirë' : '⊗ E zënë';
+        var status = car.available ? '✓ Lirë' : '⊗ E zënë';
         var row = document.createElement('tr');
         row.innerHTML = `
-            <td>${car._brand}</td>
-            <td>${car._model}</td>
-            <td>${car._year}</td>
-            <td>$${car._pricePerDay}</td>
+            <td>${car.brand}</td>
+            <td>${car.model}</td>
+            <td>${car.year}</td>
+            <td>$${car.pricePerDay}</td>
             <td>${status}</td>
         `;
         tbody.appendChild(row);
@@ -203,22 +203,22 @@ function addCar(event) {
 }
 
 function editCar(id) {
-    var car = allCars.find(function(c) { return c._id === id; });
+    var car = allCars.find(function(c) { return c.id === id; });
     if (!car) {
         alert('Makina nuk u gjet');
         return;
     }
     
-    var newBrand = prompt('Marka (e vjetër: ' + car._brand + '):', car._brand);
+    var newBrand = prompt('Marka (e vjetër: ' + car.brand + '):', car.brand);
     if (newBrand === null) return;
     
-    var newModel = prompt('Modeli (e vjetër: ' + car._model + '):', car._model);
+    var newModel = prompt('Modeli (e vjetër: ' + car.model + '):', car.model);
     if (newModel === null) return;
     
-    var newYear = prompt('Viti (e vjetër: ' + car._year + '):', car._year);
+    var newYear = prompt('Viti (e vjetër: ' + car.year + '):', car.year);
     if (newYear === null) return;
     
-    var newPrice = prompt('Çmimi (e vjetër: ' + car._pricePerDay + '):', car._pricePerDay);
+    var newPrice = prompt('Çmimi (e vjetër: ' + car.pricePerDay + '):', car.pricePerDay);
     if (newPrice === null) return;
     
     var token = localStorage.getItem('token');
@@ -234,7 +234,7 @@ function editCar(id) {
             model: newModel,
             year: parseInt(newYear),
             pricePerDay: parseFloat(newPrice),
-            available: car._available
+            available: car.available
         })
     })
     .then(function(r) { return r.json(); })

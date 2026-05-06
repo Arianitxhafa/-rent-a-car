@@ -2,10 +2,10 @@
   "name": "rentigo-rent-a-car",
   "version": "1.0.0",
   "description": "Modern car rental platform for Kosovo",
-  "main": "Program.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node Program.js",
-    "dev": "nodemon Program.js",
+    "start": "node index.js",
+    "dev": "nodemon index.js",
     "test": "jest --verbose"
   },
   "keywords": [

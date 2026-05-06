@@ -131,9 +131,9 @@ function renderCars(cars) {
 
     cars.forEach(function (car, i) {
 
-        var avail = car._available === true;
-        var img = getCarImage(car._brand || '');
-        var cat = getCarCategory(Number(car._pricePerDay) || 0);
+        var avail = car.available === true;
+        var img = getCarImage(car.brand || '');
+        var cat = getCarCategory(Number(car.pricePerDay) || 0);
 
         var card = document.createElement('div');
         card.className = 'car-card';
@@ -144,7 +144,7 @@ function renderCars(cars) {
         <div class="car-img">
             <img 
                 src="${img}" 
-                alt="${esc(car._brand)} ${esc(car._model)}"
+                alt="${esc(car.brand)} ${esc(car.model)}"
                 loading="lazy"
                 onerror="this.src='https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=600&q=80'"
             />
@@ -161,14 +161,14 @@ function renderCars(cars) {
         </div>
 
         <div class="car-body">
-            <div class="car-name">${esc(car._brand)} ${esc(car._model)}</div>
-            <div class="car-year">Viti ${car._year || '-'}</div>
+            <div class="car-name">${esc(car.brand)} ${esc(car.model)}</div>
+            <div class="car-year">Viti ${car.year || '-'}</div>
 
             <div class="car-specs">
                 <div class="car-spec">
                     <label>Çmimi</label>
                     <span class="car-price">
-                        $${car._pricePerDay || 0}<small>/ditë</small>
+                        $${car.pricePerDay || 0}<small>/ditë</small>
                     </span>
                 </div>
 
@@ -185,7 +185,7 @@ function renderCars(cars) {
 
             <div class="car-actions">
                 ${avail
-                    ? `<a href="booking.html?car=${car._id}" class="btn btn--primary">🔑 Rezervo</a>`
+                    ? `<a href="booking.html?car=${car.id}" class="btn btn--primary">🔑 Rezervo</a>`
                     : `<span class="btn btn--glass" style="opacity:0.5;cursor:default">✗ E Zënë</span>`
                 }
 
