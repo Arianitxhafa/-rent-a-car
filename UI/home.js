@@ -13,7 +13,6 @@ var showcaseInterval;
 
 document.addEventListener('DOMContentLoaded', function() {
     loadHomeData();
-    setupAuthLinks();
     setupCarDetailsModal();
 });
 
@@ -23,12 +22,14 @@ function loadHomeData() {
         .then(function(cars) {
             allCars = cars;
             var avail = cars.filter(function(c) { return c.available; });
-            document.getElementById('stat-avail').textContent = avail.length;
-            initShowcase(cars);
+            var statEl = document.getElementById('stat-avail');
+            if (statEl) statEl.textContent = avail.length;
+            if (document.getElementById('showcase-dots')) initShowcase(cars);
             renderFP(cars, '');
         })
         .catch(function() {
-            document.getElementById('stat-avail').textContent = '0';
+            var statEl = document.getElementById('stat-avail');
+            if (statEl) statEl.textContent = '0';
         });
 }
 
@@ -59,6 +60,7 @@ function updateShowcase(i) {
     var img = document.getElementById('showcase-img');
     var name = document.getElementById('showcase-name');
     var price = document.getElementById('showcase-price');
+    if (!img || !name || !price) return;
     // Animate
     img.style.opacity = '0';
     name.style.opacity = '0';
@@ -136,109 +138,6 @@ function fpFilter(filter, btn) {
 }
 
 /* ============================================================
-   AUTH LINKS — Navbar ndryshon sipas statusit login
-============================================================ */
-function setupAuthLinks() {
-    var auth = checkAuth();
-    var actions = document.getElementById('navbar-actions');
-    var mobileAuth = document.getElementById('mobile-auth');
-    if (!actions) return;
-
-    if (auth.token && auth.user) {
-        /* I LOGUAR — shfaq emrin + buton dil */
-        actions.innerHTML =
-            '<div class="navbar-user">' +
-                '<div class="navbar-user__info">' +
-                    '<div class="navbar-user__dot"></div>' +
-                    '<span>' + esc(auth.user.name || auth.user.email) + '</span>' +
-                '</div>' +
-                '<button class="btn btn--glass btn--sm" onclick="logout()">Dil</button>' +
-                '<a href="booking.html" class="btn btn--primary btn--sm">Rezervo Tani</a>' +
-            '</div>';
-        if (mobileAuth) {
-            mobileAuth.innerHTML =
-                '<span class="mobile-link" style="color:var(--green)">👤 ' + esc(auth.user.name || auth.user.email) + '</span>' +
-                '<a href="#" class="mobile-link" onclick="logout()">🚪 Dil</a>';
-        }
-    } else {
-        /* JO I LOGUAR — shfaq vetëm Hyr */
-        actions.innerHTML =
-            '<button class="btn btn--glass btn--sm" onclick="openLoginModal()">Hyr</button>' +
-            '<a href="booking.html" class="btn btn--primary btn--sm">Rezervo Tani</a>';
-        if (mobileAuth) {
-            mobileAuth.innerHTML =
-                '<a href="#" class="mobile-link" onclick="openLoginModal();document.getElementById(\'mobile-menu\').classList.remove(\'open\')">🔑 Hyr</a>';
-        }
-    }
-}
-
-function openLoginModal() {
-    var modal = document.getElementById('login-modal');
-    if (!modal) return;
-    modal.classList.add('open');
-    document.body.style.overflow = 'hidden';
-    // Focus email field pas animacionit
-    setTimeout(function() {
-        var emailField = document.getElementById('modal-email');
-        if (emailField) emailField.focus();
-    }, 100);
-}
-
-function closeLoginModal() {
-    var modal = document.getElementById('login-modal');
-    if (!modal) return;
-    modal.classList.remove('open');
-    document.body.style.overflow = '';
-}
-
-function handleModalLogin(e) {
-    e.preventDefault();
-    var email = document.getElementById('modal-email').value.trim();
-    var pass = document.getElementById('modal-pass').value;
-    var msg = document.getElementById('modal-message');
-    var btn = e.target.querySelector('button[type="submit"]');
-
-    if (!email || !pass) {
-        msg.className = 'error';
-        msg.textContent = '⚠ Plotëso të gjitha fushat!';
-        return;
-    }
-
-    btn.disabled = true;
-    btn.textContent = '⏳ Duke u lidhur...';
-
-    fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email, password: pass })
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(res) {
-        btn.disabled = false;
-        btn.innerHTML = '🚀 Hyr Tani';
-        if (res.success) {
-            localStorage.setItem('rentigoToken', res.token);
-            localStorage.setItem('rentigoUser', JSON.stringify(res.user));
-            msg.className = 'success';
-            msg.textContent = '✓ Mirë se erdhe, ' + res.user.name + '!';
-            setTimeout(function() {
-                closeLoginModal();
-                setupAuthLinks();
-            }, 900);
-        } else {
-            msg.className = 'error';
-            msg.textContent = '✗ ' + (res.message || 'Email ose fjalëkalimi gabim');
-        }
-    })
-    .catch(function() {
-        btn.disabled = false;
-        btn.innerHTML = '🚀 Hyr Tani';
-        msg.className = 'error';
-        msg.textContent = '✗ Problem me lidhjen. Provo përsëri.';
-    });
-}
-
-/* ============================================================
    CAR DETAILS MODAL
 ============================================================ */
 function setupCarDetailsModal() {
@@ -251,7 +150,7 @@ function setupCarDetailsModal() {
 }
 
 function openCarDetails(id) {
-    var car = allCars.find(function(c) { return c._id === id; });
+    var car = allCars.find(function(c) { return String(c.id) === String(id); });
     if (!car) return;
 
     var modal = document.getElementById('car-details-modal');

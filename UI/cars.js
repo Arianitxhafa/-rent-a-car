@@ -4,10 +4,22 @@
 
 var allCars = [];
 var currentView = 'grid';
+var CARS_VIEW_KEY = 'rentigoCarsView';
 
 document.addEventListener('DOMContentLoaded', function () {
+    loadSavedView();
     loadCars();
 });
+
+function loadSavedView() {
+    var saved = localStorage.getItem(CARS_VIEW_KEY);
+    if (saved === 'grid' || saved === 'list') {
+        currentView = saved;
+    }
+    document.querySelectorAll('.view-btn').forEach(function (b) {
+        b.classList.toggle('active', b.getAttribute('onclick').includes("setView('" + currentView + "'"));
+    });
+}
 
 function loadCars() {
     var grid = document.getElementById('cars-grid');
@@ -26,7 +38,7 @@ function loadCars() {
         </div>`;
     }).join('');
 
-    fetch('http://localhost:5000/api/cars')
+    fetch('/api/cars')
         .then(function (r) {
             if (!r.ok) throw new Error('HTTP Error: ' + r.status);
             return r.json();
@@ -64,12 +76,12 @@ function filterCars() {
 
     var filtered = allCars.filter(function (c) {
 
-        var brand = (c._brand || '').toLowerCase();
-        var model = (c._model || '').toLowerCase();
+        var brand = (c.brand || '').toLowerCase();
+        var model = (c.model || '').toLowerCase();
 
         var matchSearch = !search || (brand + ' ' + model).includes(search);
 
-        var available = c._available === true;
+        var available = c.available === true;
 
         var matchStatus =
             !status ||
@@ -77,7 +89,7 @@ function filterCars() {
                 ? available
                 : !available);
 
-        var price = Number(c._pricePerDay) || 0;
+        var price = Number(c.pricePerDay) || 0;
         var matchPrice = price <= maxPrice;
 
         return matchSearch && matchStatus && matchPrice;
@@ -85,11 +97,11 @@ function filterCars() {
 
     // Sorting safe
     filtered.sort(function (a, b) {
-        var priceA = Number(a._pricePerDay) || 0;
-        var priceB = Number(b._pricePerDay) || 0;
+        var priceA = Number(a.pricePerDay) || 0;
+        var priceB = Number(b.pricePerDay) || 0;
 
-        var yearA = Number(a._year) || 0;
-        var yearB = Number(b._year) || 0;
+        var yearA = Number(a.year) || 0;
+        var yearB = Number(b.year) || 0;
 
         switch (sortBy) {
             case 'price-asc': return priceA - priceB;
@@ -97,7 +109,7 @@ function filterCars() {
             case 'year-desc': return yearB - yearA;
             case 'year-asc': return yearA - yearB;
             case 'brand-az':
-                return (a._brand || '').localeCompare(b._brand || '');
+                return (a.brand || '').localeCompare(b.brand || '');
             default:
                 return 0;
         }
@@ -181,6 +193,21 @@ function renderCars(cars) {
                     <label>Statusi</label>
                     <span>${avail ? '✓ Lirë' : '✗ Zënë'}</span>
                 </div>
+
+                <div class="car-spec">
+                    <label>Ulëset</label>
+                    <span>${getCarSpecs(car.brand, car.model).seats}</span>
+                </div>
+
+                <div class="car-spec">
+                    <label>Transmisioni</label>
+                    <span>${getCarSpecs(car.brand, car.model).transmission}</span>
+                </div>
+
+                <div class="car-spec">
+                    <label>Karburanti</label>
+                    <span>${getCarSpecs(car.brand, car.model).fuel}</span>
+                </div>
             </div>
 
             <div class="car-actions">
@@ -189,7 +216,7 @@ function renderCars(cars) {
                     : `<span class="btn btn--glass" style="opacity:0.5;cursor:default">✗ E Zënë</span>`
                 }
 
-                <a href="booking.html" class="btn btn--outline btn--sm">Detaje</a>
+                <button type="button" class="btn btn--outline btn--sm" onclick="openCarDetails('${esc(car.id)}')">Detaje</button>
             </div>
         </div>`;
 
@@ -204,6 +231,7 @@ function updatePriceLabel(val) {
 
 function setView(view, btn) {
     currentView = view;
+    localStorage.setItem(CARS_VIEW_KEY, view);
 
     document.querySelectorAll('.view-btn').forEach(function (b) {
         b.classList.remove('active');

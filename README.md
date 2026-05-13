@@ -111,15 +111,77 @@ cd rent-a-car
 npm install
 ```
 
-3. **Start the server**
+3. **Copy environment variables**
 ```bash
-node Program.js
+cp .env.example .env
+```
+Edit `.env` and set your SMTP credentials and app URL.
+
+4. **Start the server**
+```bash
+npm start
 ```
 
-4. **Open in browser**
+5. **Open in browser**
+```text
+http://localhost:5000
 ```
-http://localhost:3000
-```
+
+---
+
+## 📌 Environment variables
+Use `.env` to configure the running app:
+- `PORT` – server port
+- `SMTP_HOST` – SMTP server host
+- `SMTP_PORT` – SMTP server port
+- `SMTP_USER` – SMTP username
+- `SMTP_PASS` – SMTP password
+- `SMTP_FROM` – From address for outgoing emails
+- `APP_URL` – base application URL for verification links
+
+---
+
+## 🚀 Deploy
+This app is ready for deployment to any Node.js host.
+
+Recommended platforms:
+- Render.com
+- Railway.app
+- Heroku
+- DigitalOcean App Platform
+
+### Deploy steps
+1. Push the repo to GitHub.
+2. Create a new Node.js web service on your host.
+3. Set the build command to `npm install`.
+4. Set the start command to `npm start`.
+5. Add the same env vars from `.env.example` in the host dashboard.
+
+### Deploy on Render.com
+1. Log in to Render and select "New" → "Web Service".
+2. Connect your GitHub repo and choose the `main` branch.
+3. Set `Environment` to `Node`.
+4. Set `Build Command` to `npm install`.
+5. Set `Start Command` to `npm start`.
+6. Add these environment variables in Render's dashboard:
+   - `PORT`
+   - `SMTP_HOST`
+   - `SMTP_PORT`
+   - `SMTP_USER`
+   - `SMTP_PASS`
+   - `SMTP_FROM`
+   - `APP_URL`
+7. Deploy and wait until the service is live.
+
+### Deploy on Railway.app
+1. Create a new project and link your GitHub repository.
+2. Add a new service and choose `Node.js`.
+3. Use `npm install` as the build command.
+4. Use `npm start` as the start command.
+5. Add the same env vars from `.env.example` in Railway's variables section.
+6. Deploy and open the generated URL.
+
+> Important: this project currently stores users and reset codes in local JSON files (`Data/users.json`, `Data/reset-codes.json`). Hosted platforms may not preserve the local filesystem across deploys, so for production use a database or a server with persistent disk storage.
 
 ---
 

@@ -3,11 +3,12 @@
 ============================================================ */
 var allCars = [];
 var selectedCarId = null;
+var SELECTED_CAR_KEY = 'rentigoSelectedCarId';
 
 document.addEventListener('DOMContentLoaded', function() {
-    loadCarsForBooking();
     setDefaultDates();
     checkUrlParams();
+    loadCarsForBooking();
 });
 
 function setDefaultDates() {
@@ -23,10 +24,27 @@ function setDefaultDates() {
     if (r) { r.value = fmt(nextWeek); r.min = fmt(tomorrow); }
 }
 
+function getSavedCarId() {
+    return localStorage.getItem(SELECTED_CAR_KEY);
+}
+
+function saveSelectedCarId(id) {
+    if (!id) {
+        localStorage.removeItem(SELECTED_CAR_KEY);
+        return;
+    }
+    localStorage.setItem(SELECTED_CAR_KEY, String(id));
+}
+
 function checkUrlParams() {
     var params = new URLSearchParams(window.location.search);
     var carId = params.get('car');
-    if (carId) selectedCarId = carId;
+    if (carId) {
+        selectedCarId = carId;
+        saveSelectedCarId(carId);
+    } else {
+        selectedCarId = getSavedCarId();
+    }
 }
 
 function loadCarsForBooking() {
@@ -44,8 +62,9 @@ function loadCarsForBooking() {
 
 function renderCarPicker(cars) {
     var picker = document.getElementById('car-picker');
-    var available = cars.filter(function(c) { return c._available; });
-    var rented = cars.filter(function(c) { return !c._available; });
+    if (!picker) return;
+    var available = cars.filter(function(c) { return c.available === true; });
+    var rented = cars.filter(function(c) { return c.available !== true; });
     var all = available.concat(rented);
 
     if (!all.length) {
@@ -55,18 +74,19 @@ function renderCarPicker(cars) {
 
     picker.innerHTML = '';
     all.forEach(function(car) {
-        var avail = car._available;
+        var avail = car.available === true;
+        var id = String(car.id);
         var div = document.createElement('div');
-        div.className = 'car-option' + (avail ? '' : ' disabled') + (car._id === selectedCarId ? ' selected' : '');
-        div.id = 'car-opt-' + car._id;
-        if (avail) div.onclick = function() { selectCar(car._id); };
+        div.className = 'car-option' + (avail ? '' : ' disabled') + (id === String(selectedCarId) ? ' selected' : '');
+        div.id = 'car-opt-' + id;
+        if (avail) div.onclick = function() { selectCar(id); };
         div.innerHTML =
-            '<img class="car-option__img" src="' + getCarImage(car._brand) + '" alt="' + esc(car._brand) + '" onerror="this.src=\'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=200&q=70\'" />' +
+            '<img class="car-option__img" src="' + getCarImage(car.brand) + '" alt="' + esc(car.brand) + '" onerror="this.src=\'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=200&q=70\'" />' +
             '<div class="car-option__info">' +
-                '<div class="car-option__name">' + esc(car._brand) + ' ' + esc(car._model) + ' ' + car._year + '</div>' +
-                '<div class="car-option__meta">' + getCarCategory(car._pricePerDay) + ' • ' + (avail ? '✓ E Disponueshme' : '✗ E Zënë') + '</div>' +
+                '<div class="car-option__name">' + esc(car.brand) + ' ' + esc(car.model) + ' ' + car.year + '</div>' +
+                '<div class="car-option__meta">' + getCarCategory(car.pricePerDay) + ' • ' + (avail ? '✓ E Disponueshme' : '✗ E Zënë') + '</div>' +
             '</div>' +
-            '<div class="car-option__price">$' + car._pricePerDay + '<small>/ditë</small></div>';
+            '<div class="car-option__price">$' + car.pricePerDay + '<small>/ditë</small></div>';
         picker.appendChild(div);
     });
 
@@ -78,17 +98,23 @@ function renderCarPicker(cars) {
 
 function selectCar(id) {
     selectedCarId = id;
+    saveSelectedCarId(id);
     document.querySelectorAll('.car-option').forEach(function(el) { el.classList.remove('selected'); });
     var opt = document.getElementById('car-opt-' + id);
     if (opt) opt.classList.add('selected');
 
-    var car = allCars.find(function(c) { return c._id === id; });
+    var car = allCars.find(function(c) { return String(c.id) === String(id); });
     if (!car) return;
 
-    document.getElementById('summary-car-name').textContent = car._brand + ' ' + car._model;
-    document.getElementById('summary-car-price').textContent = '$' + car._pricePerDay + '/ditë';
-    document.getElementById('summary-img').src = getCarImage(car._brand);
-    document.getElementById('sum-ppd').textContent = '$' + car._pricePerDay;
+    var nameEl = document.getElementById('summary-car-name');
+    var priceEl = document.getElementById('summary-car-price');
+    var imgEl = document.getElementById('summary-img');
+    var ppdEl = document.getElementById('sum-ppd');
+
+    if (nameEl) nameEl.textContent = car.brand + ' ' + car.model;
+    if (priceEl) priceEl.textContent = '$' + car.pricePerDay + '/ditë';
+    if (imgEl) imgEl.src = getCarImage(car.brand);
+    if (ppdEl) ppdEl.textContent = '$' + car.pricePerDay;
     updateSummary();
 }
 
@@ -104,9 +130,9 @@ function updateSummary() {
     document.getElementById('sum-return').textContent = formatDate(ret);
     document.getElementById('sum-days').textContent = days + ' ditë';
 
-    var car = allCars.find(function(c) { return c._id === selectedCarId; });
+    var car = allCars.find(function(c) { return String(c.id) === String(selectedCarId); });
     if (car) {
-        var total = (parseFloat(car._pricePerDay) * days).toFixed(0);
+        var total = (parseFloat(car.pricePerDay) * days).toFixed(0);
         document.getElementById('sum-total').textContent = '$' + total;
     }
 }
@@ -154,24 +180,40 @@ function submitBooking() {
     btn.disabled = true;
     btn.textContent = '⏳ Duke procesuar...';
 
-    fetch('/api/cars/rent/' + selectedCarId, { method: 'PUT' })
+    // Përgatit të dhënat e booking-ut
+    var bookingData = {
+        customerName: name,
+        customerEmail: email,
+        customerPhone: phone,
+        pickupDate: pickup,
+        returnDate: ret
+    };
+
+    fetch('/api/cars/rent/' + selectedCarId, { 
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(bookingData)
+    })
         .then(function(r) { return r.json(); })
         .then(function(res) {
             btn.disabled = false;
             btn.innerHTML = '🚀 Konfirmo Rezervimin';
             if (res.success) {
-                var car = allCars.find(function(c) { return c._id === selectedCarId; });
+                var car = allCars.find(function(c) { return String(c.id) === String(selectedCarId); });
                 var days = Math.max(1, Math.ceil((new Date(ret) - new Date(pickup)) / (1000*60*60*24)));
-                var total = car ? (parseFloat(car._pricePerDay) * days).toFixed(0) : 0;
-                var ref = 'RNT-' + Date.now().toString(36).toUpperCase();
+                var total = car ? (parseFloat(car.pricePerDay) * days).toFixed(0) : 0;
+                var ref = res.referenceNumber || ('RNT-' + Date.now().toString(36).toUpperCase());
 
                 document.getElementById('success-text').innerHTML =
-                    '<strong>' + (car ? car._brand + ' ' + car._model : '') + '</strong> është rezervuar.<br>' +
+                    '<strong>' + (car ? car.brand + ' ' + car.model : '') + '</strong> është rezervuar.<br>' +
                     '📅 ' + formatDate(pickup) + ' → ' + formatDate(ret) + ' (' + days + ' ditë)<br>' +
-                    '💰 Total: <strong>$' + total + '</strong>';
+                    '💰 Total: <strong>$' + total + '</strong><br>' +
+                    '<p style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #ddd; font-size: 13px;">📧 Një email konfirmimi është dërguar në <strong>' + email + '</strong></p>';
                 document.getElementById('success-ref').textContent = ref;
                 document.getElementById('success-modal').style.display = 'flex';
-                showToast('Rezervimi u konfirmua!', 'success');
+                showToast('Rezervimi u konfirmua! Email-i u dërgua.', 'success');
             } else {
                 msg.textContent = '✗ ' + res.message;
                 msg.className = 'booking-msg error';

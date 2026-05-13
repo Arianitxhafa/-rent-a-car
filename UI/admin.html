@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Admin Panel — Rentigo</title>
+    <link rel="stylesheet" href="shared.css">
+    <link rel="stylesheet" href="navbar.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&display=swap" rel="stylesheet">
     <style>
@@ -23,7 +25,7 @@
         .container { max-width: 1200px; margin: 0 auto; padding: 0 20px; }
 
         /* LAYOUT */
-        .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: 100vh; }
+        .admin-layout { display: grid; grid-template-columns: 260px 1fr; min-height: calc(100vh - 80px); margin-top: 80px; }
         
         /* SIDEBAR */
         .sidebar {
@@ -114,6 +116,8 @@
 </head>
 <body>
 
+<!-- Navbar will be injected here by navbar.js -->
+
 <div class="admin-layout">
     <!-- SIDEBAR -->
     <aside class="sidebar">
@@ -179,10 +183,10 @@
             <div class="card">
                 <h2>➕ Shto Makinë</h2>
                 <form class="form-grid" id="car-form" onsubmit="addCar(event)">
-                    <div class="form-field"><label>Marka</label><input type="text" id="car-brand" required /></div>
-                    <div class="form-field"><label>Modeli</label><input type="text" id="car-model" required /></div>
-                    <div class="form-field"><label>Viti</label><input type="number" id="car-year" required /></div>
-                    <div class="form-field"><label>Çmimi/Ditë ($)</label><input type="number" id="car-price" step="0.01" required /></div>
+                    <div class="form-field"><label>Marka</label><input type="text" id="car-brand" placeholder="p.sh. Toyota" required /></div>
+                    <div class="form-field"><label>Modeli</label><input type="text" id="car-model" placeholder="p.sh. Corolla" required /></div>
+                    <div class="form-field"><label>Viti</label><input type="number" id="car-year" placeholder="2024" required /></div>
+                    <div class="form-field"><label>Çmimi/Ditë ($)</label><input type="number" id="car-price" step="0.01" placeholder="50" required /></div>
                     <div class="form-field--full">
                         <button type="submit" class="btn btn--primary">✓ Shto Makinën</button>
                     </div>
@@ -276,74 +280,11 @@
     </div>
 </div>
 
-<script>
-    // CHECK ADMIN AUTH
-    var auth = checkAuth();
-    if (!auth.token || !auth.user.is_admin) {
-        alert('❌ Admin access required');
-        window.location.href = 'index.html';
-    }
+<!-- Navbar integration -->
+<script src="navbar.js"></script>
 
-    // TAB SWITCHING
-    function showTab(tabName, event) {
-        if (event) event.preventDefault();
-        document.querySelectorAll('.tab-pane').forEach(function(el) { el.classList.remove('active'); });
-        document.getElementById(tabName).classList.add('active');
-    }
+<!-- Shared utilities and authentication -->
+<script src="Shared.js"></script>
 
-    // ADD CAR
-    function addCar(e) {
-        e.preventDefault();
-        var brand = document.getElementById('car-brand').value;
-        var model = document.getElementById('car-model').value;
-        var year = parseInt(document.getElementById('car-year').value);
-        var price = parseFloat(document.getElementById('car-price').value);
-        var msg = document.getElementById('car-message');
-
-        fetch('/api/cars', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + auth.token },
-            body: JSON.stringify({ brand: brand, model: model, year: year, pricePerDay: price })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(res) {
-            if (res.success) {
-                msg.className = '';
-                msg.innerHTML = '✓ Makina u shtua me sukses!';
-                msg.style.display = 'block';
-                msg.style.background = 'rgba(48,209,88,0.1)';
-                msg.style.color = '#3fb950';
-                document.getElementById('car-form').reset();
-                loadCars();
-            }
-        });
-    }
-
-    // LOAD DATA
-    function loadCars() {
-        fetch('/api/cars')
-            .then(function(r) { return r.json(); })
-            .then(function(cars) {
-                document.getElementById('total-cars').textContent = cars.length;
-                document.getElementById('avail-cars').textContent = cars.filter(function(c) { return c._available; }).length;
-                var tbody = document.getElementById('cars-tbody');
-                tbody.innerHTML = '';
-                cars.slice(0, 10).forEach(function(car) {
-                    tbody.innerHTML += '<tr><td>' + car._brand + '</td><td>' + car._model + '</td><td>' + car._year + '</td><td>$' + car._pricePerDay + '</td><td>' + (car._available ? '✓ Lirë' : '✗ Zënë') + '</td><td><button class="btn btn--danger btn--sm" onclick="deleteCar(' + car._id + ')">Fshi</button></td></tr>';
-                });
-            });
-    }
-
-    function deleteCar(id) {
-        if (!confirm('A jesh i sigurt?')) return;
-        fetch('/api/cars/' + id, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + auth.token } })
-            .then(function() { loadCars(); });
-    }
-
-    // INIT
-    loadCars();
-    document.querySelector('.sidebar a').classList.add('active');
-</script>
-
-</body>
-</html>
+<!-- Admin panel functionality -->
+<script src="admin.js"></script>

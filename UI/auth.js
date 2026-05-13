@@ -28,13 +28,17 @@ function handleLogin(e) {
         btn.disabled = false;
         btn.textContent = '🚀 Hyr Tani';
         if (res.success) {
-            localStorage.setItem('token', res.token);
-            localStorage.setItem('user', JSON.stringify(res.user));
+            localStorage.setItem('rentigoToken', res.token);
+            localStorage.setItem('rentigoUser', JSON.stringify(res.user));
             showToast('Mirë se erdhe!', 'success');
             setTimeout(function() { window.location.href = 'index.html'; }, 500);
         } else {
             msg.className = 'auth-message error';
-            msg.textContent = '✗ ' + res.message;
+            if (res.emailNotVerified && res.email) {
+                msg.innerHTML = '✗ ' + res.message + ' <a href="verify-email.html?email=' + encodeURIComponent(res.email) + '">Verifiko email-in</a>';
+            } else {
+                msg.textContent = '✗ ' + res.message;
+            }
         }
     })
     .catch(function() {
@@ -85,11 +89,9 @@ function handleRegister(e) {
         btn.textContent = '✓ Regjistrohu';
         if (res.success) {
             msg.className = 'auth-message success';
-            msg.textContent = '✓ Regjistrimi u krye! Duke të ridrejtur...';
-            localStorage.setItem('token', res.token);
-            localStorage.setItem('user', JSON.stringify(res.user));
-            showToast('Mirë se erdhe në Rentigo!', 'success');
-            setTimeout(function() { window.location.href = 'index.html'; }, 1500);
+            msg.textContent = '✓ Regjistrimi u krye! Kontrollo email-in për kodin e verifikimit.';
+            showToast('Kontrollo email-in për verifikimin.', 'success');
+            setTimeout(function() { window.location.href = 'verify-email.html?email=' + encodeURIComponent(email); }, 1500);
         } else {
             msg.className = 'auth-message error';
             msg.textContent = '✗ ' + res.message;
@@ -221,6 +223,98 @@ function verifyCode(e) {
     });
 }
 
+function getQueryParam(name) {
+    var params = new URLSearchParams(window.location.search);
+    return params.get(name) || '';
+}
+
+function populateVerifyEmail() {
+    var email = getQueryParam('email');
+    var input = document.getElementById('verify-email');
+    if (email && input) {
+        input.value = email;
+    }
+}
+
+function setVerifyMessage(text, type) {
+    var el = document.getElementById('verify-message');
+    if (!el) return;
+    el.className = 'auth-message ' + type;
+    el.textContent = text;
+}
+
+function handleVerifyEmail(e) {
+    e.preventDefault();
+    var email = document.getElementById('verify-email').value.trim();
+    var code = document.getElementById('verify-code').value.trim();
+    var msg = document.getElementById('verify-message');
+    var btn = e.target.querySelector('button[type="submit"]');
+
+    if (!email || !code) {
+        setVerifyMessage('⚠ Ju lutem plotësoni email-in dhe kodin e verifikimit!', 'error');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = '⏳ Po verifikohet...';
+
+    fetch('/api/auth/verify-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email, code: code })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+        btn.disabled = false;
+        btn.textContent = '✓ Verifiko';
+        if (res.success) {
+            setVerifyMessage('✓ Email-i u verifikua me sukses! Duke të ridrejtur...', 'success');
+            showToast('Email-i u verifikua!', 'success');
+            setTimeout(function() { window.location.href = 'login.html'; }, 1500);
+        } else {
+            setVerifyMessage('✗ ' + res.message, 'error');
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.textContent = '✓ Verifiko';
+        setVerifyMessage('✗ Gabim. Provo përsëri.', 'error');
+    });
+}
+
+function resendVerification() {
+    var email = document.getElementById('verify-email').value.trim();
+    if (!email) {
+        setVerifyMessage('⚠ Shto email-in që dëshiron të ridërgosh kodin.', 'error');
+        return;
+    }
+
+    var btn = document.getElementById('resend-verify-btn');
+    btn.disabled = true;
+    btn.textContent = '⏳ Po dërgohet...';
+
+    fetch('/api/auth/resend-verification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(res) {
+        btn.disabled = false;
+        btn.textContent = 'Ridërgo Kodin';
+        if (res.success) {
+            setVerifyMessage('✓ Kodi i verifikimit është ridërguar. Kontrollo email-in.', 'success');
+        } else {
+            setVerifyMessage('✗ ' + res.message, 'error');
+        }
+    })
+    .catch(function() {
+        btn.disabled = false;
+        btn.textContent = 'Ridërgo Kodin';
+        setVerifyMessage('✗ Gabim. Provo përsëri.', 'error');
+    });
+}
+
 // AUTO-FOCUS CODE INPUTS
 document.addEventListener('DOMContentLoaded', function() {
     [1,2,3,4,5,6].forEach(function(i) {
@@ -241,13 +335,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // CHECK IF USER IS LOGGED IN
 function checkAuth() {
-    var token = localStorage.getItem('token');
-    var user = localStorage.getItem('user');
+    var token = localStorage.getItem('rentigoToken');
+    var user = localStorage.getItem('rentigoUser');
     return { token: token, user: user ? JSON.parse(user) : null };
 }
 
 function logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    localStorage.removeItem('rentigoToken');
+    localStorage.removeItem('rentigoUser');
     window.location.href = 'index.html';
 }

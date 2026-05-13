@@ -265,7 +265,9 @@
 
     if (token && user) {
       // I LOGUAR
+      var adminLink = user.is_admin ? '<a href="admin.html" class="rg-btn-ghost" style="margin-right:8px">⚙ Admin</a>' : '';
       actions.innerHTML =
+        adminLink +
         '<div class="rg-user">' +
           '<span class="rg-user__dot"></span>' +
           '<span class="rg-user__name">' + _esc(user.name || user.email) + '</span>' +
@@ -273,7 +275,9 @@
         '</div>' +
         '<a href="booking.html" class="rg-btn-orange">Rezervo Tani</a>';
       if (mobileAuth) {
+        var mobileAdminLink = user.is_admin ? '<a href="admin.html" class="rg-mobile__link">⚙ Admin</a>' : '';
         mobileAuth.innerHTML =
+          mobileAdminLink +
           '<span class="rg-mobile__link" style="color:#3fb950">👤 ' + _esc(user.name || user.email) + '</span>' +
           '<a href="#" class="rg-mobile__link" onclick="rgLogout()">Dil →</a>';
       }
@@ -384,7 +388,11 @@
         setMsg(msg, '✓ Mirë se erdhe, ' + (res.user.name || '') + '!', 'success');
         setTimeout(function () { rgCloseModal(); updateNavAuth(); }, 900);
       } else {
-        setMsg(msg, '✗ ' + (res.message || 'Email ose fjalëkalim gabim'), 'error');
+        if (res.emailNotVerified && res.email) {
+          setMsg(msg, '✗ ' + res.message + ' <a href="verify-email.html?email=' + encodeURIComponent(res.email) + '">Verifiko email-in</a>', 'error', true);
+        } else {
+          setMsg(msg, '✗ ' + (res.message || 'Email ose fjalëkalim gabim'), 'error');
+        }
       }
     })
     .catch(function () {
@@ -421,10 +429,8 @@
       btn.disabled = false;
       btn.textContent = 'Krijo Llogarinë →';
       if (res.success) {
-        localStorage.setItem('rentigoToken', res.token);
-        localStorage.setItem('rentigoUser', JSON.stringify(res.user));
-        setMsg(msg, '✓ Llogaria u krijua! Mirë se erdhe!', 'success');
-        setTimeout(function () { rgCloseModal(); updateNavAuth(); }, 900);
+        setMsg(msg, '✓ Llogaria u krijua! Kontrollo email-in për kodin e verifikimit.', 'success');
+        setTimeout(function () { window.location.href = 'verify-email.html?email=' + encodeURIComponent(email); }, 900);
       } else {
         setMsg(msg, '✗ ' + (res.message || 'Gabim gjatë regjistrimit'), 'error');
       }
@@ -527,9 +533,13 @@
   };
 
   /* ── HELPERS ── */
-  function setMsg(el, text, type) {
+  function setMsg(el, text, type, allowHtml) {
     if (!el) return;
-    el.textContent = text;
+    if (allowHtml) {
+      el.innerHTML = text;
+    } else {
+      el.textContent = text;
+    }
     el.className = 'rg-msg' + (type ? ' rg-msg--' + type : '');
   }
 

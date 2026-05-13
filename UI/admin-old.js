@@ -1,17 +1,16 @@
 /* ============================================================
-   admin.js — Admin Panel - COMPLETELY REWRITTEN
-   - Fixed authentication
-   - Car management with photo support
-   - Real bookings, messages, users management
-   - Proper error handling
+   admin.js — Admin Panel Functionality
+   - Dashboard statistics
+   - Car management
+   - Bookings tracking
+   - Messages display
+   - User management
 ============================================================ */
 
 var allCars = [];
 var allBookings = [];
 var allMessages = [];
 var allUsers = [];
-var currentUser = null;
-var currentToken = null;
 
 document.addEventListener('DOMContentLoaded', function() {
     verifyAdminAccess();
@@ -25,22 +24,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function verifyAdminAccess() {
     var token = localStorage.getItem('rentigoToken');
-    var userStr = localStorage.getItem('rentigoUser');
+    var user = localStorage.getItem('rentigoUser');
     
-    if (!token || !userStr) {
+    if (!token || !user) {
+        alert('❌ Duhet të jeni i loguar!');
         window.location.href = 'index.html';
         return;
     }
     
-    try {
-        var user = JSON.parse(userStr);
-        if (!user.is_admin) {
-            window.location.href = 'index.html';
-            return;
-        }
-        currentUser = user;
-        currentToken = token;
-    } catch (err) {
+    var userData = JSON.parse(user);
+    if (!userData.is_admin) {
+        alert('❌ Vetëm administratorët mund të hyjnë!');
         window.location.href = 'index.html';
     }
 }
@@ -60,10 +54,10 @@ function loadCarsData() {
     fetch('/api/cars')
         .then(function(r) { return r.json(); })
         .then(function(cars) {
-            allCars = cars || [];
-            var available = allCars.filter(function(c) { return c.available === true; });
+            allCars = cars;
+            var available = cars.filter(function(c) { return c._available; });
             
-            document.getElementById('total-cars').textContent = allCars.length;
+            document.getElementById('total-cars').textContent = cars.length;
             document.getElementById('avail-cars').textContent = available.length;
             
             renderCarsList();
@@ -72,51 +66,22 @@ function loadCarsData() {
         .catch(function(err) {
             console.error('Error loading cars:', err);
             document.getElementById('total-cars').textContent = '0';
-            document.getElementById('avail-cars').textContent = '0';
         });
 }
 
 function loadBookingsData() {
-    fetch('/api/bookings')
-        .then(function(r) { return r.json(); })
-        .then(function(bookings) {
-            allBookings = bookings || [];
-            document.getElementById('total-bookings').textContent = allBookings.length;
-            renderRecentBookings();
-            renderBookingsTable();
-        })
-        .catch(function(err) {
-            console.error('Error loading bookings:', err);
-            document.getElementById('total-bookings').textContent = '0';
-        });
+    // Simuluar për demo (në realitet do të vinte nga API)
+    document.getElementById('total-bookings').textContent = '5';
+    renderRecentBookings();
 }
 
 function loadUsersData() {
-    fetch('/api/admin/users', {
-        headers: { 'Authorization': 'Bearer ' + currentToken }
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(users) {
-        allUsers = users || [];
-        document.getElementById('total-users').textContent = allUsers.length;
-        renderUsersTable();
-    })
-    .catch(function(err) {
-        console.error('Error loading users:', err);
-        document.getElementById('total-users').textContent = '0';
-    });
+    // Simuluar për demo
+    document.getElementById('total-users').textContent = '12';
 }
 
 function loadMessagesData() {
-    fetch('/api/messages')
-        .then(function(r) { return r.json(); })
-        .then(function(messages) {
-            allMessages = messages || [];
-            renderMessagesTable();
-        })
-        .catch(function(err) {
-            console.error('Error loading messages:', err);
-        });
+    // Simuluar për demo
 }
 
 // ════════════════════════════════════════
@@ -128,28 +93,22 @@ function renderCarsTable() {
     if (!tbody) return;
     
     tbody.innerHTML = '';
-    
-    if (allCars.length === 0) {
-        var row = document.createElement('tr');
-        row.innerHTML = '<td colspan="6" style="text-align:center;color:var(--text2);">Nuk ka makina. Shto makinën e parë!</td>';
-        tbody.appendChild(row);
-        return;
-    }
-    
     allCars.forEach(function(car) {
+        var row = document.createElement('tr');
         var status = car.available ? '✓ Disponueshme' : '⊗ E zënë';
         var statusColor = car.available ? 'color:var(--text)' : 'color:var(--primary)';
-        var row = document.createElement('tr');
         
-        row.innerHTML = '<td>' + car.brand + '</td>' +
-            '<td>' + car.model + '</td>' +
-            '<td>' + car.year + '</td>' +
-            '<td>$' + car.pricePerDay + '/ditë</td>' +
-            '<td style="' + statusColor + '; font-weight: 600;">' + status + '</td>' +
-            '<td>' +
-                '<button class="btn btn--sm btn--ghost" onclick="editCarModal(\'' + car.id + '\')">✎ Ndrysho</button> ' +
-                '<button class="btn btn--sm btn--danger" onclick="deleteCar(\'' + car.id + '\')">✕ Fshi</button>' +
-            '</td>';
+        row.innerHTML = `
+            <td>${car.brand}</td>
+            <td>${car.model}</td>
+            <td>${car.year}</td>
+            <td>$${car.pricePerDay}/ditë</td>
+            <td style="${statusColor}; font-weight: 600;">${status}</td>
+            <td>
+                <button class="btn btn--sm btn--ghost" onclick="editCar('${car.id}')">✎ Ndrysho</button>
+                <button class="btn btn--sm btn--danger" onclick="deleteCar('${car.id}')">✕ Fshi</button>
+            </td>
+        `;
         tbody.appendChild(row);
     });
 }
@@ -159,23 +118,16 @@ function renderCarsList() {
     if (!tbody) return;
     
     tbody.innerHTML = '<tr><th>Marka</th><th>Modeli</th><th>Viti</th><th>Çmimi</th><th>Statusi</th></tr>';
-    
-    var topCars = allCars.slice(0, 5);
-    if (topCars.length === 0) {
-        var row = document.createElement('tr');
-        row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text2);">Asnjë makinë</td>';
-        tbody.appendChild(row);
-        return;
-    }
-    
-    topCars.forEach(function(car) {
+    allCars.slice(0, 5).forEach(function(car) {
         var status = car.available ? '✓ Lirë' : '⊗ E zënë';
         var row = document.createElement('tr');
-        row.innerHTML = '<td>' + car.brand + '</td>' +
-            '<td>' + car.model + '</td>' +
-            '<td>' + car.year + '</td>' +
-            '<td>$' + car.pricePerDay + '</td>' +
-            '<td>' + status + '</td>';
+        row.innerHTML = `
+            <td>${car.brand}</td>
+            <td>${car.model}</td>
+            <td>${car.year}</td>
+            <td>$${car.pricePerDay}</td>
+            <td>${status}</td>
+        `;
         tbody.appendChild(row);
     });
 }
@@ -185,98 +137,20 @@ function renderRecentBookings() {
     if (!tbody) return;
     
     tbody.innerHTML = '<tr><th>ID</th><th>Përdoruesi</th><th>Makina</th><th>Datat</th></tr>';
+    // Demo data
+    var demoBookings = [
+        { id: 'BK001', user: 'Arben Gashi', car: 'Toyota Corolla', dates: '10-12 Mai' },
+        { id: 'BK002', user: 'Florina Kelmendi', car: 'BMW 320i', dates: '11-15 Mai' }
+    ];
     
-    var topBookings = allBookings.slice(0, 5);
-    if (topBookings.length === 0) {
+    demoBookings.forEach(function(booking) {
         var row = document.createElement('tr');
-        row.innerHTML = '<td colspan="4" style="text-align:center;color:var(--text2);">Asnjë rezervim</td>';
-        tbody.appendChild(row);
-        return;
-    }
-    
-    topBookings.forEach(function(booking) {
-        var row = document.createElement('tr');
-        row.innerHTML = '<td><strong>' + booking.referenceNumber + '</strong></td>' +
-            '<td>' + booking.customerName + '</td>' +
-            '<td>' + booking.carBrand + ' ' + booking.carModel + '</td>' +
-            '<td>' + booking.pickupDate + ' → ' + booking.returnDate + '</td>';
-        tbody.appendChild(row);
-    });
-}
-
-function renderBookingsTable() {
-    var tbody = document.getElementById('bookings-tbody');
-    if (!tbody) return;
-    
-    tbody.innerHTML = '';
-    
-    if (allBookings.length === 0) {
-        var row = document.createElement('tr');
-        row.innerHTML = '<td colspan="6" style="text-align:center;color:var(--text2);">Nuk ka rezervime</td>';
-        tbody.appendChild(row);
-        return;
-    }
-    
-    allBookings.forEach(function(booking) {
-        var total = (parseFloat(booking.pricePerDay) * booking.days).toFixed(2);
-        var row = document.createElement('tr');
-        row.innerHTML = '<td><strong>' + booking.referenceNumber + '</strong></td>' +
-            '<td>' + booking.customerName + '</td>' +
-            '<td>' + booking.carBrand + ' ' + booking.carModel + '</td>' +
-            '<td>' + booking.pickupDate + ' → ' + booking.returnDate + '</td>' +
-            '<td>$' + total + '</td>' +
-            '<td><span style="color:var(--text2);">✓ ' + booking.status + '</span></td>';
-        tbody.appendChild(row);
-    });
-}
-
-function renderMessagesTable() {
-    var tbody = document.getElementById('messages-tbody');
-    if (!tbody) return;
-    
-    tbody.innerHTML = '';
-    
-    if (allMessages.length === 0) {
-        var row = document.createElement('tr');
-        row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text2);">Nuk ka mesazhe</td>';
-        tbody.appendChild(row);
-        return;
-    }
-    
-    allMessages.forEach(function(msg) {
-        var row = document.createElement('tr');
-        var date = new Date(msg.createdAt).toLocaleDateString('sq-AL');
-        row.innerHTML = '<td>' + msg.name + '</td>' +
-            '<td>' + msg.email + '</td>' +
-            '<td>' + msg.subject + '</td>' +
-            '<td style="color:var(--text2);font-size:12px;">' + (msg.message.substring(0, 50) + '...') + '</td>' +
-            '<td>' + date + '</td>';
-        tbody.appendChild(row);
-    });
-}
-
-function renderUsersTable() {
-    var tbody = document.getElementById('users-tbody');
-    if (!tbody) return;
-    
-    tbody.innerHTML = '';
-    
-    if (allUsers.length === 0) {
-        var row = document.createElement('tr');
-        row.innerHTML = '<td colspan="5" style="text-align:center;color:var(--text2);">Nuk ka përdorues</td>';
-        tbody.appendChild(row);
-        return;
-    }
-    
-    allUsers.forEach(function(user) {
-        var row = document.createElement('tr');
-        var role = user.is_admin ? '👤 Admin' : '👥 Përdorues';
-        var date = new Date(user.createdAt).toLocaleDateString('sq-AL');
-        row.innerHTML = '<td>' + user.name + '</td>' +
-            '<td>' + user.email + '</td>' +
-            '<td>' + user.phone + '</td>' +
-            '<td>' + role + '</td>' +
-            '<td>' + date + '</td>';
+        row.innerHTML = `
+            <td>${booking.id}</td>
+            <td>${booking.user}</td>
+            <td>${booking.car}</td>
+            <td>${booking.dates}</td>
+        `;
         tbody.appendChild(row);
     });
 }
@@ -294,15 +168,17 @@ function addCar(event) {
     var price = parseFloat(document.getElementById('car-price').value);
     
     if (!brand || !model || !year || !price) {
-        showMessage('car-message', '⚠ Plotëso të gjitha fushat!', 'error');
+        showMessage('car-message', 'Plotëso të gjitha fushat!', 'error');
         return;
     }
+    
+    var token = localStorage.getItem('rentigoToken');
     
     fetch('/api/cars', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + currentToken
+            'Authorization': 'Bearer ' + token
         },
         body: JSON.stringify({
             brand: brand,
@@ -322,11 +198,11 @@ function addCar(event) {
         }
     })
     .catch(function(err) {
-        showMessage('car-message', '❌ Gabim: ' + err.message, 'error');
+        showMessage('car-message', '❌ Gabim në lidhje: ' + err.message, 'error');
     });
 }
 
-function editCarModal(id) {
+function editCar(id) {
     var car = allCars.find(function(c) { return c.id === id; });
     if (!car) {
         alert('Makina nuk u gjet');
@@ -342,14 +218,16 @@ function editCarModal(id) {
     var newYear = prompt('Viti (e vjetër: ' + car.year + '):', car.year);
     if (newYear === null) return;
     
-    var newPrice = prompt('Çmimi (e vjetër: $' + car.pricePerDay + '):', car.pricePerDay);
+    var newPrice = prompt('Çmimi (e vjetër: ' + car.pricePerDay + '):', car.pricePerDay);
     if (newPrice === null) return;
+    
+    var token = localStorage.getItem('rentigoToken');
     
     fetch('/api/cars/update/' + id, {
         method: 'PUT',
         headers: {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + currentToken
+            'Authorization': 'Bearer ' + token
         },
         body: JSON.stringify({
             brand: newBrand,
@@ -376,10 +254,12 @@ function editCarModal(id) {
 function deleteCar(id) {
     if (!confirm('Jeni i sigurt të fshini këtë makinë?')) return;
     
+    var token = localStorage.getItem('rentigoToken');
+    
     fetch('/api/cars/' + id, {
         method: 'DELETE',
         headers: {
-            'Authorization': 'Bearer ' + currentToken
+            'Authorization': 'Bearer ' + token
         }
     })
     .then(function(r) { return r.json(); })
@@ -416,14 +296,13 @@ function showMessage(elementId, message, type) {
 }
 
 function setupEventListeners() {
-    var sidebarLinks = document.querySelectorAll('.sidebar a');
+    // Sidebar link handlers
+    var sidebarLinks = document.querySelectorAll('.sidebar a[onclick*="showTab"]');
     sidebarLinks.forEach(function(link) {
-        if (link.getAttribute('onclick') && link.getAttribute('onclick').includes('showTab')) {
-            link.addEventListener('click', function() {
-                document.querySelectorAll('.sidebar a').forEach(function(a) { a.classList.remove('active'); });
-                this.classList.add('active');
-            });
-        }
+        link.addEventListener('click', function() {
+            document.querySelectorAll('.sidebar a').forEach(function(a) { a.classList.remove('active'); });
+            this.classList.add('active');
+        });
     });
 }
 
@@ -433,6 +312,7 @@ function showTab(tabName, event) {
     document.querySelectorAll('.tab-pane').forEach(function(el) { el.classList.remove('active'); });
     document.getElementById(tabName).classList.add('active');
     
+    // Update page title
     var titles = {
         'dashboard': 'Dashboard',
         'cars': 'Makinat',
@@ -441,19 +321,28 @@ function showTab(tabName, event) {
         'users': 'Përdoruesit'
     };
     document.getElementById('page-title').textContent = titles[tabName] || 'Dashboard';
-    
-    // Update sidebar active state
-    document.querySelectorAll('.sidebar a').forEach(function(a) { a.classList.remove('active'); });
-    var activeLink = document.querySelector('.sidebar a[onclick*="' + tabName + '"]');
-    if (activeLink) activeLink.classList.add('active');
 }
 
 // ════════════════════════════════════════
 // AUTH HELPERS
 // ════════════════════════════════════════
 
+function checkAuth() {
+    var token = localStorage.getItem('rentigoToken');
+    var user = localStorage.getItem('rentigoUser');
+    
+    if (!token || !user) {
+        return { token: null, user: null };
+    }
+    
+    return {
+        token: token,
+        user: JSON.parse(user)
+    };
+}
+
 function logout() {
-    if (confirm('Jeni i sigurt të dilni nga admin?')) {
+    if (confirm('Jeni i sigurt të dilni?')) {
         localStorage.removeItem('rentigoToken');
         localStorage.removeItem('rentigoUser');
         window.location.href = 'index.html';
